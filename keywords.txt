@@ -1,0 +1,76 @@
+#######################################
+# Syntax Coloring Map For GSON
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+GSON	KEYWORD1
+Entry	KEYWORD1
+Doc	KEYWORD1
+DocStatic	KEYWORD1
+Type	KEYWORD1
+Error	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+get	KEYWORD2
+valid	KEYWORD2
+key	KEYWORD2
+value	KEYWORD2
+length	KEYWORD2
+type	KEYWORD2
+
+size	KEYWORD2
+readType	KEYWORD2
+parse	KEYWORD2
+stringify	KEYWORD2
+hasError	KEYWORD2
+getError	KEYWORD2
+errorIndex	KEYWORD2
+readError	KEYWORD2
+
+clear	KEYWORD2
+reserve	KEYWORD2
+end	KEYWORD2
+add	KEYWORD2
+addKey	KEYWORD2
+addRaw	KEYWORD2
+addStr	KEYWORD2
+addBool	KEYWORD2
+addFloat	KEYWORD2
+addInt	KEYWORD2
+beginObj	KEYWORD2
+endObj	KEYWORD2
+beginArr	KEYWORD2
+endArr	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+None	LITERAL1
+Alloc	LITERAL1
+TooDeep	LITERAL1
+NoParent	LITERAL1
+NotContainer	LITERAL1
+UnexComma	LITERAL1
+UnexColon	LITERAL1
+UnexToken	LITERAL1
+UnexQuotes	LITERAL1
+UnexOpen	LITERAL1
+UnexClose	LITERAL1
+UnknownToken	LITERAL1
+BrokenToken	LITERAL1
+BrokenString	LITERAL1
+BrokenContainer	LITERAL1
+
+Object	LITERAL1
+Array	LITERAL1
+String	LITERAL1
+Int	LITERAL1
+Float	LITERAL1
+Bool	LITERAL1
