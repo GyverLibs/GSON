@@ -86,7 +86,16 @@ class string {
     }
 
     // добавить строку (строка любого типа)
-    void operator=(const AnyText& value) {
+    void operator=(const char* value) {
+        addStr(value);
+    }
+    void operator=(const __FlashStringHelper* value) {
+        addStr(value);
+    }
+    void operator=(const String& value) {
+        addStr(value);
+    }
+    void operator=(String& value) {
         addStr(value);
     }
 
