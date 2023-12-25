@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <StringUtils.h>
 
-namespace GSON {
+namespace gson {
 
 using sutil::AnyText;
 using sutil::AnyValue;
@@ -22,6 +22,11 @@ class string {
         s = "";
     }
 
+    // длина строки
+    uint16_t length() {
+        return s.length();
+    }
+
     // зарезервировать строку
     bool reserve(uint16_t res) {
         return s.reserve(res);
@@ -33,13 +38,13 @@ class string {
         return *this;
     }
 
-    // прибавить GSON::string. Будет добавлена запятая
+    // прибавить gson::string. Будет добавлена запятая
     string& add(const string& str) {
         s += str.s;
-        return _com();
+        return comma();
     }
 
-    // прибавить GSON::string. Будет добавлена запятая
+    // прибавить gson::string. Будет добавлена запятая
     void operator+=(const string& str) {
         add(str);
     }
@@ -47,7 +52,7 @@ class string {
     // =============== KEY ===============
 
     // добавить ключ (строка любого типа)
-    string& addKey(const AnyText& key) {
+    string& addKey(AnyText key) {
         if (key.valid()) {
             _text(key);
             s += ':';
@@ -56,33 +61,33 @@ class string {
     }
 
     // добавить ключ (строка любого типа)
-    string& operator[](const AnyText& key) {
+    string& operator[](AnyText key) {
         return addKey(key);
     }
 
     // =============== VALUE ===============
 
     // прибавить текст (строка любого типа)
-    string& addRaw(const AnyText& str, bool esc = false) {
+    string& addRaw(AnyText str, bool esc = false) {
         _addText(str, esc);
         return *this;
     }
 
     // прибавить текст (строка любого типа)
-    void operator+=(const AnyText& str) {
+    void operator+=(AnyText str) {
         _addText(str);
     }
 
     // добавить строку (строка любого типа)
-    string& addStr(const AnyText& key, const AnyText& value) {
+    string& addStr(AnyText key, AnyText value) {
         addKey(key);
         return addStr(value);
     }
 
     // добавить строку (строка любого типа)
-    string& addStr(const AnyText& value) {
+    string& addStr(AnyText value) {
         _text(value, true);
-        return _com();
+        return comma();
     }
 
     // добавить строку (строка любого типа)
@@ -100,7 +105,7 @@ class string {
     }
 
     // добавить bool
-    string& addBool(const AnyText& key, const bool& value) {
+    string& addBool(AnyText key, const bool& value) {
         addKey(key);
         return addBool(value);
     }
@@ -108,7 +113,7 @@ class string {
     // добавить bool
     string& addBool(const bool& value) {
         s += value ? F("true") : F("false");
-        return _com();
+        return comma();
     }
 
     // добавить bool
@@ -117,7 +122,7 @@ class string {
     }
 
     // добавить float
-    string& addFloat(const AnyText& key, const double& value, uint8_t dec = 2) {
+    string& addFloat(AnyText key, const double& value, uint8_t dec = 2) {
         addKey(key);
         return addFloat(value, dec);
     }
@@ -130,7 +135,7 @@ class string {
             dtostrf(value, dec + 2, dec, buf);
             s += buf;
         }
-        return _com();
+        return comma();
     }
 
     // добавить float
@@ -139,15 +144,15 @@ class string {
     }
 
     // добавить int
-    string& addInt(const AnyText& key, const AnyValue& value) {
+    string& addInt(AnyText key, const AnyValue& value) {
         addKey(key);
         return addInt(value);
     }
 
     // добавить int
-    string& addInt(const AnyValue& value) {
+    string& addInt(AnyValue value) {
         value.toString(s);
-        return _com();
+        return comma();
     }
 
     // добавить int
@@ -179,7 +184,7 @@ class string {
     // =============== CONTAINER ===============
 
     // начать объект
-    string& beginObj(const AnyText& key = AnyText()) {
+    string& beginObj(AnyText key = AnyText()) {
         addKey(key);
         s += '{';
         return *this;
@@ -188,11 +193,11 @@ class string {
     // завершить объект
     string& endObj() {
         _replaceComma('}');
-        return _com();
+        return comma();
     }
 
     // начать массив
-    string& beginArr(const AnyText& key = AnyText()) {
+    string& beginArr(AnyText key = AnyText()) {
         addKey(key);
         s += '[';
         return *this;
@@ -201,18 +206,29 @@ class string {
     // завершить массив
     string& endArr() {
         _replaceComma(']');
-        return _com();
+        return comma();
+    }
+
+    // двойные кавычки
+    string& dq() {
+        s += '\"';
+        return *this;
+    }
+
+    // запятая
+    string& comma() {
+        s += ',';
+        return *this;
+    }
+
+    // двоеточие
+    string& colon() {
+        s += ':';
+        return *this;
     }
 
     // =============== PRIVATE ===============
    private:
-    void _dq() {
-        s += '\"';
-    }
-    string& _com() {
-        s += ',';
-        return *this;
-    }
     void _replaceComma(char sym) {
         if (s[s.length() - 1] == ',') {
             if (!sym) {
@@ -222,12 +238,12 @@ class string {
             s[s.length() - 1] = sym;
         } else s += sym;
     }
-    void _text(const AnyText& value, bool esc = false) {
-        _dq();
+    void _text(AnyText& value, bool esc = false) {
+        dq();
         _addText(value, esc);
-        _dq();
+        dq();
     }
-    void _addText(const AnyText& value, bool esc = false) {
+    void _addText(AnyText& value, bool esc = false) {
         if (esc) {
             s.reserve(s.length() + value.length());
             char p = 0;
@@ -263,4 +279,4 @@ class string {
     }
 };
 
-}  // namespace GSON
+}  // namespace gson

@@ -3,7 +3,7 @@
 
 void setup() {
     Serial.begin(115200);
-    GSON::string gs;                // создать строку
+    gson::string gs;                // создать строку
     gs.beginObj();                  // начать объект
     gs.addStr("str1", F("value"));  // добавить строковое значение
     gs["str2"] = "value2";          // так тоже можно
@@ -26,7 +26,7 @@ void setup() {
 
     Serial.println(gs);
 
-    GSON::Doc doc(10);
+    gson::Doc doc(10);
     doc.parse(gs);
 
     Serial.println(doc[0]);
@@ -39,17 +39,17 @@ void setup() {
     Serial.println();
     Serial.println();
 
-    for (uint16_t i = 0; i < doc.entries.length(); i++) {
-        // if (doc.entries[i].type == GSON::Type::Object || doc.entries[i].type == GSON::Type::Array) continue; // пропустить контейнеры
+    for (uint16_t i = 0; i < doc.length(); i++) {
+        // if (doc.type(i) == gson::Type::Object || doc.type(i) == gson::Type::Array) continue; // пропустить контейнеры
         Serial.print(i);
         Serial.print(". [");
         Serial.print(doc.readType(i));
         Serial.print("] ");
-        Serial.print(doc.entries[i].key);
+        Serial.print(doc.key(i));
         Serial.print(":");
-        Serial.print(doc.entries[i].value);
+        Serial.print(doc.value(i));
         Serial.print(" {");
-        Serial.print(doc.entries[i].parent);
+        Serial.print(doc.parent(i));
         Serial.println("}");
     }
 }

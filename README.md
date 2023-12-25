@@ -7,11 +7,13 @@
 
 # GSON
 Парсер и сборщик данных в формате JSON для Arduino
-- В два раза быстрее и сильно легче ArduinoJSON
+- В 7 раз быстрее и сильно легче ArduinoJSON
 - Парсинг JSON с обработкой ошибок
 - Линейная сборка JSON-пакета
 - Экранирование "опасных" символов
 - Работает на базе AnyText (StringUtils)
+- Работает с 64 битными числами
+- *Библиотека не подходит для хранения данных! Только парсинг и сборка с нуля*
 
 ### Совместимость
 Совместима со всеми Arduino платформами (используются Arduino-функции)
@@ -29,31 +31,34 @@
 <a id="docs"></a>
 
 ## Документация
-### `GSON::Doc`
+### `gson::Doc`
 ```cpp
 // конструктор
-GSON::Doc();
-GSON::Doc(размер);
-GSON::DocStatic<размер>();
+gson::Doc();
+gson::Doc(размер);
+gson::DocStatic<размер>();
 
 // методы
-uint16_t length();              // получить количество записей Entry
-uint16_t size();                // получить размер Doc в оперативной памяти (байт)
-Entry get(const AnyText& key);  // доступ по ключу (главный контейнер - Object)
+uint16_t length();              // получить количество элементов
+uint16_t size();                // получить размер документа в оперативной памяти (байт)
+void hashKeys();                // хешировать ключи всех элементов (операция необратима)
+bool hashed();                  // проверка были ли хешированы ключи
+
+Entry get(AnyText key);         // доступ по ключу (главный контейнер - Object)
+Entry get(size_t hash);         // доступ по хэшу ключа (главный контейнер - Object)
 Entry get(int index);           // доступ по индексу (главный контейнер - Array или Object)
-AnyText key(uint16_t idx);      // прочитать ключ по индексу
-AnyText value(uint16_t idx);    // прочитать значение по индексу
-GSON::Type type();              // получить тип по индексу
+
+AnyText key(int idx);           // прочитать ключ по индексу
+size_t keyHash(int idx);        // прочитать хэш ключа по индексу
+AnyText value(int idx);         // прочитать значение по индексу
+int8_t parent(int idx);         // прочитать родителя по индексу
+Type type(int idx);             // получить тип по индексу
+
 const __FlashStringHelper* readType(uint16_t idx);  // прочитать тип по индексу
 
-// парсить. Вернёт true при успешном парсинге
-bool parse(String& json);
-bool parse(const char* json);
-
-template <uint16_t max_depth = 16>
-bool parseT(String& json);
-template <uint16_t max_depth = 16>
-bool parseT(const char* json);
+// парсить. Вернёт true при успешном парсинге. Можно указать макс. уровень вложенности
+bool parse(String& json, uint8_t maxdepth = 16);
+bool parse(const char* json, uint8_t maxdepth = 16);
 
 // вывести в Print с форматированием
 void stringify(Print* p);
@@ -65,7 +70,22 @@ uint16_t errorIndex();                  // индекс места ошибки 
 const __FlashStringHelper* readError(); // прочитать ошибку
 ```
 
-### `GSON::Type`
+#### Лимиты
+- После парсинга один элемент весит 6 байт на AVR и 12 байт на ESP
+- Максимальное количество элементов (ограничение счётчика) - 255 на AVR и 65535 на ESP
+- Максимальный уровень вложенности задаётся в функции `parse()`. Парсинг - рекурсивный, каждый уровень добавляет несколько байт в оперативку
+
+### Тесты
+Тестировал на ESP8266, пакет сообщений из телеграм бота - 3500 символов, 8 сообщений, 180 "элементов". Получал значение самого отдалённого и вложенного элемента, в GSON - через хэш. Результат:
+
+| Либа        | Flash  | SRAM  | FreeHeap | Parse   | Hash   | Get    |
+|-------------|--------|-------|----------|---------|--------|--------|
+| ArduinoJson | 285525 | 28256 | 45648    | 9900 us | -      | 158 us |
+| GSON        | 275193 | 28076 | 46664    | 1400 us | 324 us | 156 us |
+
+Таким образом GSON **в 7 раз быстрее** при парсинге, значения элементов получает с такой же скоростью. Сама библиотека легче на 10 кБ во Flash и 1 кБ в Heap. В других тестах (AVR) на получение значения GSON с хэшем работал в среднем в 1.5 раза быстрее.
+
+### `gson::Type`
 ```cpp
 None
 Object
@@ -76,7 +96,7 @@ Float
 Bool
 ```
 
-### `GSON::Error`
+### `gson::Error`
 ```cpp
 None
 Alloc
@@ -93,56 +113,65 @@ UnknownToken
 BrokenToken
 BrokenString
 BrokenContainer
+EmptyKey
+IndexOverflow
 ```
 
-### `GSON::Entry`
+### `gson::Entry`
 Также наследует всё из `AnyText`, документация [здесь](https://github.com/GyverLibs/StringUtils?tab=readme-ov-file#anytext)
 
 ```cpp
-Entry get(const AnyText& key);  // получить элемент по ключу
-Entry get(int index);           // получить элемент по индексу
-bool valid();                   // проверка корректности (существования)
-AnyText key();                  // получить ключ
-AnyText value();                // получить значение
-uint16_t length();              // получить размер (для объектов и массивов. Для остальных 0)
-Type type();                    // получить тип
+bool includes(AnyText key);      // содержит элемент с указанным ключом
+Entry get(AnyText key);     // получить элемент по ключу
+
+Entry get(size_t hash);     // получить элемент по хэшу ключа
+bool includes(size_t hash);      // содержит элемент с указанным хэшем ключа
+
+Entry get(int index);       // получить элемент по индексу
+
+bool valid();               // проверка корректности (существования)
+uint16_t length();          // получить размер (для объектов и массивов. Для остальных 0)
+Type type();                // получить тип элемента
+AnyText key();              // получить ключ
+size_t keyHash();           // получить хэш ключа
+AnyText value();            // получить значение
 ```
 
-### `GSON::string`
+### `gson::string`
 ```cpp
 String s;                   // доступ к строке
 void clear();               // очистить строку
 bool reserve(uint16_t res); // зарезервировать строку
 
-// прибавить GSON::string. Будет добавлена запятая
+// прибавить gson::string. Будет добавлена запятая
 string& add(const string& str);
 
 // добавить ключ (строка любого типа)
-string& addKey(const AnyText& key);
+string& addKey(AnyText key);
 
 // прибавить текст (строка любого типа)
-string& addRaw(const AnyText& str, bool esc = false);
+string& addRaw(AnyText str, bool esc = false);
 
 // добавить строку (строка любого типа)
-string& addStr(const AnyText& key, const AnyText& value);
-string& addStr(const AnyText& value);
+string& addStr(AnyText key, AnyText value);
+string& addStr(AnyText value);
 
 // добавить bool
-string& addBool(const AnyText& key, const bool& value);
+string& addBool(AnyText key, const bool& value);
 string& addBool(const bool& value);
 
 // добавить float
-string& addFloat(const AnyText& key, const double& value, uint8_t dec = 2);
+string& addFloat(AnyText key, const double& value, uint8_t dec = 2);
 string& addFloat(const double& value, uint8_t dec = 2);
 
 // добавить int
-string& addInt(const AnyText& key, const AnyValue& value);
+string& addInt(AnyText key, const AnyValue& value);
 string& addInt(const AnyValue& value);
 
-string& beginObj(const AnyText& key = "");   // начать объект
+string& beginObj(AnyText key = "");   // начать объект
 string& endObj();   // завершить объект
 
-string& beginArr(const AnyText& key = "");   // начать массив
+string& beginArr(AnyText key = "");   // начать массив
 string& endArr();   // завершить массив
 
 string& end();      // завершить пакет
@@ -162,9 +191,9 @@ string& end();      // завершить пакет
 
 Создание документа:
 ```cpp
-GSON::Doc doc;              // динамический документ
-GSON::Doc doc(10);          // динамический документ, зарезервирован под 10 элементов
-GSON::DocStatic<10> doc;    // статический документ, зарезервирован под 10 элементов
+gson::Doc doc;              // динамический документ
+gson::Doc doc(10);          // динамический документ, зарезервирован под 10 элементов
+gson::DocStatic<10> doc;    // статический документ, зарезервирован под 10 элементов
 ```
 
 Смысл как у `String`-строки: динамический документ будет увеличиваться в процессе парсинга в динамической памяти МК, если размер документа неизвестен. Можно заранее зарезервировать размер, чтобы парсинг происходил быстрее. Статический - выделяется статически, используя меньше памяти на слабых платформах.
@@ -176,23 +205,28 @@ String json = "{\"key\":\"value\",\"int\":12345,\"obj\":{\"float\":3.14,\"bool\"
 
 // парсить
 doc.parse(json);
+
+// обработка ошибок
+if (doc.hasError()) {
+    Serial.print(doc.readError());
+    Serial.print(" in ");
+    Serial.println(doc.errorIndex());
+} else Serial.println("done");
 ```
 
-Парсер имеет **фиксированный** уровень вложенности объектов и массивов, при его переполнении будет ошибка парсинга `TooDeep`. По умолчанию значение равно 16 (*один уровень вложенности занимает один байт памяти*). Можно изменить его, используя шаблонную функцию `parseT<размер>`. 
-
+После парсинга можно вывести весь пакет с типами, ключами, значениями в виде текста и родителем:
 ```cpp
-// вывести весь пакет с типами, ключами, значениями в виде текста и родителем
-for (int i = 0; i < doc.entries.length(); i++) {
-    // if (doc.entries[i].type == GSON::Type::Object || doc.entries[i].type == GSON::Type::Array) continue; // пропустить контейнеры
+for (uint16_t i = 0; i < doc.length(); i++) {
+    // if (doc.type(i) == gson::Type::Object || doc.type(i) == gson::Type::Array) continue; // пропустить контейнеры
     Serial.print(i);
     Serial.print(". [");
     Serial.print(doc.readType(i));
     Serial.print("] ");
-    Serial.print(doc.entries[i].key);
+    Serial.print(doc.key(i));
     Serial.print(":");
-    Serial.print(doc.entries[i].value);
+    Serial.print(doc.value(i));
     Serial.print(" {");
-    Serial.print(doc.entries[i].parent);
+    Serial.print(doc.parent(i));
     Serial.println("}");
 }
 ```
@@ -212,6 +246,20 @@ float f = doc["obj"]["float"];   // вложенный объект
 Serial.println(doc["arr"][0]);   // hello
 Serial.println(doc["arr"][1]);   // true
 
+// проверка типа
+doc["arr"].type() == gson::Type::Array;
+
+// вывод содержимого массива
+for (int i = 0; i < doc["arr"].length(); i++) {
+    Serial.println(doc["arr"][i]);
+}
+
+// а лучше - так
+gson::Entry arr = doc["arr"];
+for (int i = 0; i < arr.length(); i++) {
+    Serial.println(arr[i]);
+}
+
 // Пусть json имеет вид [[123,456],["abc","def"]], тогда ко вложенным массивам можно обратиться:
 Serial.println(doc[0][0]);  // 123
 Serial.println(doc[0][1]);  // 456
@@ -219,18 +267,55 @@ Serial.println(doc[1][0]);  // abc
 Serial.println(doc[1][1]);  // def
 ```
 
-Каждый элемент можно вывести в тип `GSON::Entry` по имени (из объекта) или индексу (из массива) и использовать отдельно, чтобы не "искать" его заново:
+Каждый элемент можно вывести в тип `gson::Entry` по имени (из объекта) или индексу (из массива) и использовать отдельно, чтобы не "искать" его заново:
 ```cpp
-GSON::Entry e = doc["arr"];
+gson::Entry e = doc["arr"];
 Serial.println(e.length());  // длина массива
 Serial.println(e[0]);        // hello
 Serial.println(e[1]);        // true
 ```
 
+### Хэширование
+GSON нативно поддерживает хэш-строки из StringUtils, работа с хэшами значительно увеличивает скорость доступа к элементам JSON документа по ключу. Для этого нужно:
+
+1. Хэшировать ключи. **Данная операция необратима**: ключи в текстовом виде уже нельзя будет прочитать из документа:
+```cpp
+doc.hashKeys();
+```
+
+2. Обращаться к элементам по хэшам ключей, используя функцию `sutil::SH`:
+```cpp
+using sutil::SH;
+
+void foo() {
+    Serial.println(doc[SH("int")]);
+    Serial.println(doc[SH("obj")][SH("float")]);
+    Serial.println(doc[SH("array")][0]);
+}
+```
+
+Строка, переданная в `SH`, вообще **не существует в программе** и не занимает места: хэш считается компилятором на этапе компиляции, вместо него подставляется число. А сравнение чисел выполняется быстрее, чем сравнение строк.
+
+Примечания:
+- Функция `keyHash()` вернёт:
+    - Ранее посчитанный хэш, если была вызвана `hashKeys()`
+    - Если не вызвана - посчитает и вернёт хэш
+- Функция `key()` вернёт:
+    - Валидную строку, если не был посчитан хэш `hashKeys()`
+    - Пустую строку, если был посчитан
+
+3. Для расчёта и получения хэша значения можно просто применить `hash()` из `AnyText`
+```cpp
+switch (doc[SH("str")].hash()) {
+    case SH("some text"):
+    // ...
+}
+```
+
 ### Сборка
 JSON строка собирается **линейно** в обычную `String`-строку, что очень просто и приятно для микроконтроллера:
 ```cpp
-GSON::string gs;                // создать строку
+gson::string gs;                // создать строку
 gs.beginObj();                  // начать объект 1
 gs.addStr("str1", F("value"));  // добавить строковое значение
 gs["str2"] = "value2";          // так тоже можно
@@ -242,15 +327,16 @@ gs["bool"] = false;             // Bool значение
 gs.endObj();                    // завершить объект 2
 gs.endObj();                    // завершить объект 1
 
-gs.end();           // ЗАВЕРШИТЬ ПАКЕТ (обязательно вызывается в конце)
+gs.end();                       // ЗАВЕРШИТЬ ПАКЕТ (обязательно вызывается в конце)
 
-Serial.println(gs); // вывод в порт
+Serial.println(gs);             // вывод в порт
 ```
 
 <a id="versions"></a>
 
 ## Версии
 - v1.0
+- v1.1 - улучшен парсер, добавлено хэширование ключей и обращение по хэш-кодам
 
 <a id="install"></a>
 

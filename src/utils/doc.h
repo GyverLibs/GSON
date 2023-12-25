@@ -2,18 +2,17 @@
 #include <Arduino.h>
 #include <StringUtils.h>
 
+#include "entries.h"
 #include "entry.h"
-#include "stack.h"
 #include "types.h"
-
-#define GSON_MAX_DEPTH 16
 
 namespace gsutil {
 
-using GSON::Entry;
-using GSON::Entry_t;
-using GSON::Error;
-using GSON::Type;
+using gson::Entry;
+using gson::Error;
+using gson::parent_t;
+using gson::Type;
+using gsutil::Entry_t;
 using sutil::AnyText;
 
 // ================== DOC CORE ==================
@@ -28,53 +27,90 @@ class DocCore {
     };
 
    public:
-    gsutil::Stack<Entry_t, capacity> entries;
-
     DocCore(uint16_t reserve = 0) : entries(reserve) {}
 
-    // получить количество записей Entry
+    // получить количество элементов
     uint16_t length() {
         return entries.length();
     }
 
-    // получить размер Doc в оперативной памяти (байт)
+    // получить размер документа в оперативной памяти (байт)
     uint16_t size() {
         return entries.length() * sizeof(Entry_t);
     }
 
-    // ============ READ ============
+    // хешировать ключи всех элементов (операция необратима)
+    void hashKeys() {
+        entries.hashKeys();
+    }
+
+    // проверка были ли хешированы ключи
+    bool hashed() {
+        return entries.hashed();
+    }
+
+    // ===================== BY KEY =====================
+
     // доступ по ключу (главный контейнер - Object)
-    Entry get(const AnyText& key) {
-        if (entries[0].type == Type::Object) {
-            for (uint16_t i = 0; i < entries.length(); i++) {
-                if (key.compare(entries[i].key)) return Entry(entries, i);
+    Entry get(AnyText key) {
+        if (entries[0].type == Type::Object && !entries.hashed()) {
+            for (uint16_t i = 1; i < entries.length(); i++) {
+                if (entries[i].parent == 0 && entries[i].key.str && key.compare(entries[i].key.str)) {
+                    return Entry(&entries, i);
+                }
             }
         }
-        return Entry(entries, -1);
+        return Entry(nullptr, 0);
     }
-    Entry operator[](const AnyText& key) {
+    Entry operator[](AnyText key) {
         return get(key);
     }
 
-    // доступ по индексу (главный контейнер - Array или Object)
+    // ===================== BY HASH =====================
+
+    // доступ по хэшу ключа (главный контейнер - Object)
+    Entry get(const size_t& hash) {
+        if (entries[0].type == Type::Object && entries.hashed()) {
+            for (uint16_t i = 1; i < entries.length(); i++) {
+                if (entries[i].parent == 0 && entries[i].key.hash == hash) {
+                    return Entry(&entries, i);
+                }
+            }
+        }
+        return Entry(nullptr, 0);
+    }
+    Entry operator[](const size_t& hash) {
+        return get(hash);
+    }
+
+    // ===================== BY INDEX =====================
+
+    // доступ по индексу в главный контейнер - Array или Object
     Entry get(int index) {
         if (entries[0].type == Type::Object || entries[0].type == Type::Array) {
-            for (uint16_t i = 0; i < entries.length(); i++) {
+            for (uint16_t i = 1; i < entries.length(); i++) {
                 if (entries[i].parent == 0) {
-                    if (!index) return Entry(entries, i);
+                    if (!index) return Entry(&entries, i);
                     index--;
                 }
             }
         }
-        return Entry(entries, -1);
+        return Entry(nullptr, 0);
     }
     Entry operator[](int index) {
         return get(index);
     }
 
+    // ===================== MISC =====================
+
     // прочитать ключ по индексу
     AnyText key(uint16_t idx) {
-        return (idx < length() && entries[idx].key) ? entries[idx].key : "";
+        return (idx < length() && entries[idx].key.str && !entries.hashed()) ? entries[idx].key.str : "";
+    }
+
+    // прочитать хэш ключа по индексу
+    size_t keyHash(uint16_t idx) {
+        return (idx < length()) ? (entries.hashed() ? entries[idx].key.hash : sutil::hash(entries[idx].key.str)) : 0;
     }
 
     // прочитать значение по индексу
@@ -82,13 +118,18 @@ class DocCore {
         return (idx < length() && entries[idx].value) ? entries[idx].value : "";
     }
 
+    // прочитать родителя по индексу
+    parent_t parent(uint16_t idx) {
+        return (idx < length()) ? entries[idx].parent : 0;
+    }
+
     // получить тип по индексу
-    GSON::Type type(uint16_t idx) {
+    gson::Type type(uint16_t idx) {
         return (idx < length()) ? entries[idx].type : Type::None;
     }
 
     // прочитать тип по индексу
-    const __FlashStringHelper* readType(uint16_t index) {
+    const __FlashStringHelper* readType(int index) {
         switch (type(index)) {
             case Type::Object:
                 return F("Object");
@@ -108,207 +149,34 @@ class DocCore {
     }
 
     // ============ PARSE ============
-    // парсить. Вернёт true при успешном парсинге
-    bool parse(String& json) {
+    // парсить. Вернёт true при успешном парсинге. Можно указать макс. уровень вложенности
+    bool parse(String& json, uint8_t maxdepth = 16) {
         return parse(json.c_str());
     }
 
-    // парсить. Вернёт true при успешном парсинге
-    bool parse(const char* json) {
-        return parseT<>(json);
-    }
-
-    // парсить. Вернёт true при успешном парсинге
-    template <uint16_t max_depth = GSON_MAX_DEPTH>
-    bool parseT(String& json) {
-        return parseT<max_depth>(json.c_str());
-    }
-
-    // парсить. Вернёт true при успешном парсинге
-    template <uint16_t max_depth = GSON_MAX_DEPTH>
-    bool parseT(const char* json) {
+    // парсить. Вернёт true при успешном парсинге. Можно указать макс. уровень вложенности
+    bool parse(const char* json, uint8_t maxdepth = 16) {
         str = json;
         p = (char*)json;
-        error = Error::None;
+        state = State::Idle;
+        clearComma = 0;
+        readStr = 0;
+        buf = Entry_t();
         entries.clear();
-
-        gsutil::Stack<int8_t, max_depth> parents;
-        State state = State::Idle;
-        bool clearComma = 0;
-        bool readStr = 0;
-        Entry_t buf;
+        depth = maxdepth;
 
         if (p[0] == '{' || p[0] == '[') {
-            Entry_t entry = {nullptr, nullptr, -1, (p[0] == '{') ? Type::Object : Type::Array};
-            if (!entries.push(entry)) return error = Error::Alloc, 0;
-            parents.push(0);
-            p++;
-        } else {
-            return error = Error::NotContainer, 0;
-        }
-
-        while (*p) {
-            switch (*p) {
-                case ' ':
-                case '\n':
-                case '\r':
-                case '\t':
-                    break;
-
-                case ',':
-                    if (state != State::Idle) return error = Error::UnexComma, 0;
-                    state = (entries[parents.peek()].type == Type::Array) ? State::WaitValue : State::WaitKey;
-                    if (clearComma) {
-                        clearComma = 0;
-                        *p = 0;
-                    }
-                    break;
-
-                case ':':
-                    if (entries[parents.peek()].type == Type::Object && state == State::WaitColon) state = State::WaitValue;
-                    else return error = Error::UnexColon, 0;
-                    break;
-
-                case '\"':
-                    switch (entries[parents.peek()].type) {
-                        case Type::Array:
-                            switch (state) {
-                                case State::Idle:
-                                case State::WaitValue:
-                                    readStr = 1;
-                                    break;
-
-                                default:
-                                    return error = Error::UnexQuotes, 0;
-                            }
-                            break;
-
-                        case Type::Object:
-                            switch (state) {
-                                case State::WaitKey:
-                                case State::Idle:
-                                    buf.key = p + 1;
-                                    if (!skipString()) return error = Error::BrokenString, 0;
-                                    *p = 0;
-                                    state = State::WaitColon;
-                                    break;
-
-                                case State::WaitValue:
-                                    readStr = 1;
-                                    break;
-
-                                default:
-                                    return error = Error::UnexQuotes, 0;
-                            }
-                            break;
-
-                        default:
-                            return error = Error::UnexQuotes, 0;
-                    }
-                    break;
-
-                case '{':
-                case '[': {
-                    if (!(entries[parents.peek()].type == Type::Array && (state == State::Idle || state == State::WaitValue)) &&
-                        !(entries[parents.peek()].type == Type::Object && state == State::WaitValue)) return error = Error::UnexOpen, 0;
-                    Entry_t entry = Entry_t{buf.key, nullptr, parents.peek(), (*p == '{') ? Type::Object : Type::Array};
-                    if (!entries.push(entry)) return error = Error::Alloc, 0;
-                    if (!parents.push(entries.length() - 1)) return error = Error::TooDeep, 0;  // idx of last in array
-                    buf.key = buf.value = nullptr;
-                    state = State::Idle;
-                } break;
-
-                case '}':
-                case ']': {
-                    if (state != State::Idle || entries[parents.peek()].type != ((*p == '}') ? Type::Object : Type::Array)) {
-                        return error = Error::UnexClose, 0;
-                    }
-                    *p = 0;
-                    if (!parents.pop()) return error = Error::NoParent, 0;
-                    state = State::Idle;
-                    if (!parents.length()) return 1;
-                } break;
-
-                default: {
-                    if (
-                        !(entries[parents.peek()].type == Type::Object && state == State::WaitValue) &&
-                        !(entries[parents.peek()].type == Type::Array && (state == State::WaitValue || state == State::Idle))) return error = Error::UnexToken, 0;
-
-                    buf.value = p;
-                    switch (*p) {
-                        case 't':
-                        case 'f':
-                            buf.type = Type::Bool;
-                            break;
-                        case '-':
-                        case '1' ... '9':
-                            buf.type = Type::Int;
-                            break;
-                        default:
-                            return error = Error::UnknownToken, 0;
-                    }
-                    while (true) {
-                        if (*p == '.') {
-                            if (buf.type == Type::Int) buf.type = Type::Float;
-                            else return error = Error::UnknownToken, 0;
-                        }
-                        if (!p[1]) return error = Error::BrokenToken, 0;
-                        bool end = 0;
-                        switch (p[1]) {
-                            case ' ':
-                            case '\t':
-                            case '\r':
-                            case '\n':
-                                *p = 0;
-                            case ',':
-                                clearComma = 1;
-                            case '}':
-                            case ']':
-                                end = 1;
-                        }
-                        if (end) break;
-                        p++;
-                    }
-                    if (buf.type == Type::Bool) {
-                        uint16_t len = p - buf.value + 1;
-                        if (len == 4 && !strncmp_P(buf.value, PSTR("true"), 4))
-                            ;
-                        else if (len == 5 && !strncmp_P(buf.value, PSTR("false"), 5))
-                            ;
-                        else return error = Error::BrokenToken, 0;
-                    }
-                    Entry_t entry = Entry_t{buf.key, buf.value, parents.peek(), buf.type};
-                    if (!entries.push(entry)) return error = Error::Alloc, 0;
-                    buf.key = buf.value = nullptr;
-                    state = State::Idle;
-                } break;
-
-            }  // switch
-
-            if (readStr) {
-                readStr = 0;
-                p++;
-                buf.value = p;
-                if (!skipString()) return error = Error::BrokenString, 0;
-                *p = 0;
-                Entry_t entry = Entry_t{buf.key, buf.value, parents.peek(), Type::String};
-                if (!entries.push(entry)) return error = Error::Alloc, 0;
-                buf.key = buf.value = nullptr;
-                state = State::Idle;
-            }
-
-            p++;
-        }  // while
-
-        if (parents.length()) return error = Error::BrokenContainer, 0;
-        return 1;
+            error = _parse(0);
+            entries[0].parent = GSON_MAX_INDEX;
+        } else error = Error::NotContainer;
+        return hasError();
     }
 
     // вывести в Print с форматированием
     void stringify(Print* p) {
-        int16_t idx = 0;
+        parent_t idx = 0;
         uint8_t dep = 0;
-        _stringify(*p, idx, -1, dep);
+        _stringify(*p, idx, GSON_MAX_INDEX, dep);
         p->println();
     }
 
@@ -331,8 +199,6 @@ class DocCore {
     // прочитать ошибку
     const __FlashStringHelper* readError() {
         switch (error) {
-            case Error::None:
-                return F("None");
             case Error::Alloc:
                 return F("Alloc");
             case Error::TooDeep:
@@ -361,21 +227,27 @@ class DocCore {
                 return F("BrokenString");
             case Error::BrokenContainer:
                 return F("BrokenContainer");
+            case Error::EmptyKey:
+                return F("EmptyKey");
+            case Error::IndexOverflow:
+                return F("IndexOverflow");
+            default:
+                return F("None");
         }
     }
 
     // ============ PRIVATE ============
    private:
+    gsutil::Entries<capacity> entries;
     const char* str = nullptr;
     char* p = nullptr;
     Error error = Error::None;
 
-    bool skipString() {
-        while (*p++) {
-            if (*p == '\"' && p[-1] != '\\') return 1;
-        }
-        return 0;
-    }
+    State state = State::Idle;
+    bool clearComma = 0;
+    bool readStr = 0;
+    Entry_t buf;
+    uint8_t depth = 0;
 
     void printT(Print& p, int16_t amount) {
         while (amount--) {
@@ -384,7 +256,7 @@ class DocCore {
         }
     }
 
-    void _stringify(Print& p, int16_t& idx, int16_t parent, uint8_t& dep) {
+    void _stringify(Print& p, parent_t& idx, parent_t parent, uint8_t& dep) {
         bool first = true;
         while (idx < entries.length()) {
             Entry_t ent = entries[idx];
@@ -394,9 +266,9 @@ class DocCore {
 
             if (ent.type == Type::Array || ent.type == Type::Object) {
                 printT(p, dep);
-                if (ent.key) {
+                if (ent.key.str) {
                     p.print('\"');
-                    p.print(ent.key);
+                    p.print(ent.key.str);
                     p.print("\": ");
                 }
                 p.print((ent.type == Type::Array) ? '[' : '{');
@@ -411,9 +283,9 @@ class DocCore {
                 p.print((ent.type == Type::Array) ? ']' : '}');
             } else {
                 printT(p, dep);
-                if (ent.key) {
+                if (ent.key.str) {
                     p.print('\"');
-                    p.print(ent.key);
+                    p.print(ent.key.str);
                     p.print("\":");
                 }
                 if (ent.type == Type::String) p.print('\"');
@@ -426,17 +298,204 @@ class DocCore {
                     case Type::Bool:
                         p.print((ent.value[0] == 't') ? F("true") : F("false"));
                         break;
+                    default:
+                        break;
                 }
                 if (ent.type == Type::String) p.print('\"');
                 idx++;
             }
         }
     }
+
+    Error _parse(parent_t parent) {
+        while (*p) {
+            switch (*p) {
+                case ' ':
+                case '\n':
+                case '\r':
+                case '\t':
+                    break;
+
+                case ',':
+                    if (state != State::Idle) return Error::UnexComma;
+                    state = (entries[parent].type == Type::Array) ? State::WaitValue : State::WaitKey;
+                    if (clearComma) {
+                        clearComma = 0;
+                        *p = 0;
+                    }
+                    break;
+
+                case ':':
+                    if (entries[parent].type == Type::Object && state == State::WaitColon) state = State::WaitValue;
+                    else return Error::UnexColon;
+                    break;
+
+                case '\"':
+                    switch (entries[parent].type) {
+                        case Type::Array:
+                            switch (state) {
+                                case State::Idle:
+                                case State::WaitValue:
+                                    readStr = 1;
+                                    break;
+
+                                default:
+                                    return Error::UnexQuotes;
+                            }
+                            break;
+
+                        case Type::Object:
+                            switch (state) {
+                                case State::WaitKey:
+                                case State::Idle:
+                                    p++;
+                                    if (*p == '\"') return Error::EmptyKey;
+                                    buf.key.str = p;
+                                    while (1) {
+                                        p = strchr(p + 1, '\"');
+                                        if (p[-1] != '\\') break;
+                                        if (!p) return Error::BrokenString;
+                                    }
+                                    *p = 0;
+                                    state = State::WaitColon;
+                                    break;
+
+                                case State::WaitValue:
+                                    readStr = 1;
+                                    break;
+
+                                default:
+                                    return Error::UnexQuotes;
+                            }
+                            break;
+
+                        default:
+                            return Error::UnexQuotes;
+                    }
+                    break;
+
+                case '{':
+                case '[': {
+                    if (p != str) { // not first symb
+                        if (!(entries[parent].type == Type::Array && (state == State::Idle || state == State::WaitValue)) &&
+                            !(entries[parent].type == Type::Object && state == State::WaitValue)) {
+                            return Error::UnexOpen;
+                        }
+                    }
+
+                    Entry_t entry = Entry_t{buf.key.str, nullptr, parent, (*p == '{') ? Type::Object : Type::Array};
+                    if (entries.length() == GSON_MAX_INDEX - 1) return Error::IndexOverflow;
+                    if (!entries.push(entry)) return Error::Alloc;
+
+                    buf.key.str = buf.value = nullptr;
+                    state = State::Idle;
+                    p++;
+
+                    if (depth - 1 == 0) return Error::TooDeep;
+                    depth--;
+                    error = _parse(entries.length() - 1);
+                    depth++;
+                    if (hasError()) return error;
+                } break;
+
+                case '}':
+                case ']': {
+                    if (state != State::Idle || entries[parent].type != ((*p == '}') ? Type::Object : Type::Array)) {
+                        return Error::UnexClose;
+                    }
+                    *p = 0;
+                    return Error::None;
+                } break;
+
+                default: {
+                    if (!(entries[parent].type == Type::Object && state == State::WaitValue) &&
+                        !(entries[parent].type == Type::Array && (state == State::WaitValue || state == State::Idle))) {
+                        return Error::UnexToken;
+                    }
+
+                    buf.value = p;
+                    switch (*p) {
+                        case 't':
+                        case 'f':
+                            buf.type = Type::Bool;
+                            break;
+                        case '-':
+                        case '1' ... '9':
+                            buf.type = Type::Int;
+                            break;
+                        default:
+                            return Error::UnknownToken;
+                    }
+                    while (true) {
+                        if (*p == '.') {
+                            if (buf.type == Type::Int) buf.type = Type::Float;
+                            else return Error::UnknownToken;
+                        }
+                        if (!p[1]) return Error::BrokenToken;
+
+                        bool end = 0;
+                        switch (p[1]) {  // next sym
+                            case ' ':
+                            case '\t':
+                            case '\r':
+                            case '\n':
+                                *p = 0;
+                            case ',':
+                                clearComma = 1;
+                            case '}':
+                            case ']':
+                                end = 1;
+                        }
+                        if (end) break;
+                        p++;
+                    }
+                    if (buf.type == Type::Bool) {
+                        uint16_t len = p - buf.value + 1;
+                        if (!(len == 4 && !strncmp_P(buf.value, PSTR("true"), 4)) &&
+                            !(len == 5 && !strncmp_P(buf.value, PSTR("false"), 5))) {
+                            return Error::BrokenToken;
+                        }
+                    }
+                    Entry_t entry = Entry_t{buf.key.str, buf.value, parent, buf.type};
+                    if (entries.length() == GSON_MAX_INDEX - 1) return Error::IndexOverflow;
+                    if (!entries.push(entry)) return Error::Alloc;
+                    buf.key.str = buf.value = nullptr;
+                    state = State::Idle;
+                } break;
+
+            }  // switch
+
+            if (readStr) {
+                readStr = 0;
+                p++;
+                if (*p == '\"') {
+                    buf.value = nullptr;
+                } else {
+                    buf.value = p;
+                    while (1) {
+                        p = strchr(p + 1, '\"');
+                        if (p[-1] != '\\') break;
+                        if (!p) return Error::BrokenString;
+                    }
+                }
+                *p = 0;
+                Entry_t entry = Entry_t{buf.key.str, buf.value, parent, Type::String};
+                if (entries.length() == GSON_MAX_INDEX - 1) return Error::IndexOverflow;
+                if (!entries.push(entry)) return Error::Alloc;
+                buf.key.str = buf.value = nullptr;
+                state = State::Idle;
+            }
+
+            p++;
+        }  // while
+
+        return (parent == 0) ? Error::None : Error::BrokenContainer;
+    }
 };
 
 }  // namespace gsutil
 
-namespace GSON {
+namespace gson {
 
 // ================== DOC DYNAMIC ==================
 class Doc : public gsutil::DocCore<-1> {
@@ -448,4 +507,4 @@ class Doc : public gsutil::DocCore<-1> {
 template <uint16_t capacity>
 class DocStatic : public gsutil::DocCore<capacity> {};
 
-}  // namespace GSON
+}  // namespace gson

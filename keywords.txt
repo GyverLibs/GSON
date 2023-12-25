@@ -17,13 +17,19 @@ Error	KEYWORD1
 # Methods and Functions (KEYWORD2)
 #######################################
 
+gson	KEYWORD2
+
 get	KEYWORD2
 valid	KEYWORD2
 key	KEYWORD2
 value	KEYWORD2
 length	KEYWORD2
 type	KEYWORD2
-
+includes	KEYWORD2
+parent	KEYWORD2
+keyHash	KEYWORD2
+hashKeys	KEYWORD2
+hashed	KEYWORD2
 size	KEYWORD2
 readType	KEYWORD2
 parse	KEYWORD2
@@ -47,6 +53,9 @@ beginObj	KEYWORD2
 endObj	KEYWORD2
 beginArr	KEYWORD2
 endArr	KEYWORD2
+dq	KEYWORD2
+comma	KEYWORD2
+colon	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
@@ -67,6 +76,8 @@ UnknownToken	LITERAL1
 BrokenToken	LITERAL1
 BrokenString	LITERAL1
 BrokenContainer	LITERAL1
+EmptyKey	LITERAL1
+IndexOverflow	LITERAL1
 
 Object	LITERAL1
 Array	LITERAL1
