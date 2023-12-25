@@ -121,11 +121,11 @@ IndexOverflow
 Также наследует всё из `AnyText`, документация [здесь](https://github.com/GyverLibs/StringUtils?tab=readme-ov-file#anytext)
 
 ```cpp
-bool includes(AnyText key);      // содержит элемент с указанным ключом
 Entry get(AnyText key);     // получить элемент по ключу
+bool includes(AnyText key); // содержит элемент с указанным ключом
 
 Entry get(size_t hash);     // получить элемент по хэшу ключа
-bool includes(size_t hash);      // содержит элемент с указанным хэшем ключа
+bool includes(size_t hash); // содержит элемент с указанным хэшем ключа
 
 Entry get(int index);       // получить элемент по индексу
 
