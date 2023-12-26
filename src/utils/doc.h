@@ -169,7 +169,7 @@ class DocCore {
             error = _parse(0);
             entries[0].parent = GSON_MAX_INDEX;
         } else error = Error::NotContainer;
-        return hasError();
+        return !hasError();
     }
 
     // вывести в Print с форматированием
