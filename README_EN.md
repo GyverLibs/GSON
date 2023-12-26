@@ -2,11 +2,13 @@ This is an automatic translation, may be incorrect in some places. See sources a
 
 # Gson
 Parser and data collector in json format for Arduino
-- Twice faster and much lighter than Arduinojson
+- 7 times faster and much lighter than Arduinojson
 - JSON Parsing with error processing
 - Linear assembly of a json package
 - shielding "dangerous" symbols
 - works on the basis of Anytext (Stringutils)
+- works with 64 bit numbers
+- *The library is not suitable for storing data!Only parsing and assembly from scratch*
 
 ## compatibility
 Compatible with all arduino platforms (used arduino functions)
@@ -32,23 +34,26 @@ GSON :: doc (size);
 GSON :: doCstatic <size> ();
 
 // Methods
-uint16_t Length ();// Get the number of Entry records
-uint16_t size ();// Get DOC size in RAM (byte)
-Entry Get (Constext & Key);// Key access (main container - Object)
+uint16_t Length ();// get the number of elements
+uint16_t size ();// get the size of the document in RAM (byte)
+Void Hashkeys ();// Heshcht the keys of all elements (the operation is irreversible)
+Bool Hashed ();// Checking whether the keys were drunken
+
+Entry Get (Anytext Key);// Key access (main container - Object)
+Entry Get (Size_t Hash);// Access to Hash Key (main container - Object)
 Entry Get (Int Index);// Access by index (main container - Array or Object)
-Anytext Key (Uint16_T IDX);// Read the key on the index
-Anytext Value (Uint16_T IDX);// Read the value by index
-Gson :: Type Type ();// get the type of index
+
+Anytext Key (Intx);// Read the key on the index
+size_t keyhash (int IDX);// Read the Hesh key on the index
+Anytext Value (Intx);// Read the value by index
+int8_t part (int itx);// Read the parent on the index
+Type Type (int IDX);// get the type of index
+
 const __flashstringhelper* readtype (Uint16_T IDX);// Read the type of index
 
-// Parish.Will return True with successful parsing
-Bool Parse (String & Json);
-Bool Parse (Const Char* Json);
-
-TEMPLATE <UINT16_T MAX_DEPTH = 16>
-Bool Parset (String & Json);
-TEMPLATE <UINT16_T MAX_DEPTH = 16>
-Bool Parset (Const Char* Json);
+// Parish.True will return with successful parsing.You can specify Max.The level of investment
+Bool Parse (String & Json, Uint8_t Maxdepth = 16);
+Bool Parse (Const Char* Json, Uint8_t Maxdepth = 16);
 
 // Bring out to Print with formatting
 VOID stringify (print* p);
@@ -59,6 +64,21 @@ Error Geterror ();// get an error
 uint16_t errorindex ();// Index of the place of error in the line
 const __flashstringhelper* readerror ();// Read the error
 `` `
+
+### limits
+- After parsing, one element weighs 6 bytes on AVR and 12 bytes on ESP
+- the maximum number of elements (meter restriction) - 255 on AVR and 65535 on ESP
+- The maximum level of investment is set in the function of `PARSE ()`.Parsing is recursive, each level adds several bytes to the RAM
+
+### tests
+He tested on ESP8266, a package of messages from the bottle - 3500 characters, 8 messages, 180 "elements".He received the value of the most distant and invested element, in the gson - through the hash.Result:
+
+|Libe |Flash |Sram |Freeheap |Parse |Hash |Get |
+| ------------ | -------- | ------ | --------- | ------------| -------- | ------- |
+|Arduinojson |285525 |28256 |45648 |9900 US |- |158 US |
+|Gson |275193 |28076 |46664 |1400 US |324 US |156 US |
+
+Thus, Gson ** is 7 times faster ** during parsing, the values of the elements are obtained withis the same speed.The library itself is easier to 10 kb in Flash and 1 KB in Heap.In other tests (AVR) to obtain the GSON value with a hasa, it worked on average 1.5 times faster.
 
 ### `GSON :: Type`
 `` `CPP
@@ -88,19 +108,28 @@ Unknowntoken
 Brokentoken
 Brokenstring
 BrokenContainer
+Emptyky
+Indexoverflow
 `` `
 
 ### `GSON :: Entry`
 Also inherits everything from `Anytext`, documentation [here] (https://github.com/gyverlibs/stringutils?tab=Readme-ov-file#anytext)
 
 `` `CPP
-Entry Get (Constext & Key);// get an element by key
+Entry Get (Anytext Key);// get an element by key
+Bool Includes (Anytext Key);// contains an element with the specified key
+
+Entry Get (Size_t Hash);// Get the element according to the Key Hash
+Bool Includes (Size_t Hash);// contains an element with the indicated Key Hash
+
 Entry Get (Int Index);// Get an index element
+
 Bool Valid ();// Checking correctness (existence)
-Anytext Key ();// Get the key
-Anytext Value ();// get a value
 uint16_t Length ();// Get the size (for objects and arrays. For the rest 0)
-Type type ();// get a type
+Type type ();// get the type of element
+Anytext Key ();// Get the key
+size_t keyhash ();// Get a keys of the key
+Anytext Value ();// get a value
 `` `
 
 ### `GSON :: String`
@@ -113,31 +142,31 @@ Bool Reserve (Uint16_T Res);// Reserve a line
 String & Add (Constation String & STR);
 
 // Add the key (string of any type)
-String & Addkey (Constext & Key);
+String & Addkey (Anytext Key);
 
 // add text (string of any type)
-String & Addraw (Constext & Str, Bool ESC = FALSE);
+String & Addraw (Anytext Str, Bool ESC = FALSE);
 
 // Add a line (a string of any type)
-String & aDDSTR (COST ANYTEXT & KEY, COST ANYTEXT & VALUE);
-String & Addstr (Constext & Value);
+String & Addstr (Anytext Key, Anytext Value);
+String & Addstr (Anytext Value);
 
 // Add bool
-String & Addbool (Constext & Key, Const Bool & Value);
+String & Addbool (Anytext Key, Const Bool & Value);
 String & Addbool (Const Bool & Value);
 
 // Add Float
-String & Addfloat (Constext & Key, const Double & Value, Uint8_t Dec = 2);
+String & Addfloat (Anytext Key, const Double & Value, Uint8_t Dec = 2);
 String & Addfloat (Constance Double & Value, Uint8_t Dec = 2);
 
 // Add int
-String & Addint (Constext & Key, const ANYVALUE & VALUE);
+String & Addint (Anytext Key, Const ANYVALUE & VALUE);
 String & Addint (Const ANYVALUE & VALUE);
 
-String & Beginobj (Constext & Key = "");// Start an object
+String & Beginobj (Anytext Key = "");// Start an object
 String & Endobj ();// Complete the object
 
-String & Beginarr (Constext & Key = "");// Start an array
+String & Beginarr (Anytext Key = "");// Start an array
 String & Endarr ();// End the array
 
 String & End ();// complete the package
@@ -171,23 +200,28 @@ String json = "\" key \ ": \" value \ ", \" int \ ": 12345, \" Obj \ ": {\" floa
 
 // Parish
 doc.parse (json);
+
+// error processing
+if (doc.Haserror ()) {
+    Serial.print (doc.earaderror ());
+    Serial.print ("in");
+    Serial.println (doc.errorindex ());
+} Else serial.println ("Done");
 `` `
 
-Parser has ** fixed ** level of investment of objects and arrays, when it is overflowing, there will be a parsing error `toodeep`.By default, the value is 16 (*one level of investment occupies one byte of memory*).You can change it using the template function of `PARSET <LARS>`.
-
-`` `CPP
-// Bring the entire package with types, keys, values in the form of text and parent
-for (int i = 0; i <doc.entries.length (); i ++) {
-    // if (doc.entries [i] .type == gson :: type :: Object || doc.entries [i] .type == gson :: Type :: Array) Continue;// Skip containers
+After parsing, you can derive the entire package with types, keys, values in the form of text and parent:
+```CPP
+for (uint16_t i = 0; i <doC.length (); i ++) {
+    // if (doc.type (i) == gson :: type :: Object || doc.type (i) == gson :: type :: array) Continue;// Skip containers
     Serial.print (i);
     Serial.print (".. [");
     Serial.print (doc.readtype (i));
     Serial.print ("]");
-    Serial.print (doc.entries [i] .key);
+    Serial.print (doc.key (i));
     Serial.print (":");
-    Serial.print (doc.entries [i] .value);
+    Serial.print (doc.value (i));
     Serial.print ("{");
-    Serial.print (doc.entries [i] .part);
+    Serial.print (doc.part (i));
     Serial.println ("}");
 }
 `` `
@@ -207,6 +241,20 @@ Float F = doc ["Obj"] ["Float"];// invested object
 Serial.println (doc ["arr"] [0]);// Hello
 Serial.println (doc ["arr"] [1]);// True
 
+// Type check
+doc ["arr"]. Type () == gson :: type :: array;
+
+// Conclusion of the contents of the array
+for (int i = 0; i <doc ["arr"]. Length (); i ++) {
+    Serial.println (doc ["arr"] [i]);
+}
+
+// and better - so
+Gson :: Entry Arr = doc ["arr"];
+for (int i = 0; i <arr.length (); i ++) {
+    Serial.println (arr [i]);
+}
+
 // Let json have the form [[123,456], ["ABC", "Def"]], then you can turn to the nested arrays:
 Serial.println (doc [0] [0]);// 123
 Serial.println (doc [0] [1]);// 456
@@ -214,12 +262,49 @@ Serial.println (doc [1] [0]);// ABC
 Serial.println (doc [1] [1]);// Def
 `` `
 
-Each element can be brought to the type `gson :: Entry` by name (andto object) or index (from array) and use separately so as not to "look" it again:
+Each element can be brought to the type `gson :: Entry` by name (from the object) or index (from array) and use separately so as not to" look "it again:
 `` `CPP
 GSON :: Entry E = doc ["arr"];
 Serial.println (E.LENGTH ());// The length of the array
 Serial.println (E [0]);// Hello
 Serial.println (E [1]);// True
+`` `
+
+### Hash
+GSON is natively supported by Stringutils hash strokes, work with hashi significantly increases the speed of access to the JSON elements of the key document.For this you need:
+
+1. Hashcht the keys.** This operation is irreversible **: The keys in the text form can no longer read from the document:
+`` `CPP
+doc.hashkeys ();
+`` `
+
+2. Turn to the elements according to the Hesh keys using the function `sutil :: Sh`:
+`` `CPP
+USing Sutil :: SH;
+
+VOID FOO () {
+    Serial.println (doc [SH ("int")]);
+    Serial.println (doc [SH ("Obj")] [SH ("Float")]);
+    Serial.println (doc [SH ("Array")] [0]);
+}
+`` `
+
+The line transferred to `SH`, in general ** does not exist in the ** program and does not take up place: the hash is considered a compiler at the compilation stage, the number is substituted instead.And the comparison of numbers is performed faster than the comparison of the lines.
+
+Notes:
+- function `keyhash ()` will return:
+    - Previously counted hash, if it was caused by `hashkeys ()`
+    - if not caused, he will count and return the hash
+- The function `key ()` will return:
+    - a valid line if the hash `hashkeys ()` `was not calculated
+    - empty line if it was calculated
+
+3. For calculating and obtaining a hash, you can simply apply `hash ()` from `ANYTEXT`
+`` `CPP
+switch (doc [SH ("str")]. Hash ()) {
+    Case SH ("SOME TEXT"):
+    // ...
+}
 `` `
 
 ## assembly
@@ -235,6 +320,14 @@ GS.Addfloat (Float), 3.14);// Float
 GS ["float2"] = 3.14;// or so
 GS ["Bool"] = false;// Bool value
 gs.ndobj ();// Complete object 2
+
+GS.Beginarr ("Array");// Start an array
+GS.Addfloat (3.14);// to array - without key
+GS += "Text";
+GS += 12345;
+GS += True;
+gs.ndarr ();// End the array
+
 gs.ndobj ();// Complete object 1
 
 gs.end ();// complete the package (necessarily called at the end)
@@ -246,6 +339,7 @@ Serial.println (GS);// Conclusion to the port
 
 ## versions
 - V1.0
+- V1.1 - Improved Parser, added keys and harsh codes.
 
 <a id="install"> </a>
 
