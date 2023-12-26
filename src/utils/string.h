@@ -94,13 +94,25 @@ class string {
     void operator=(const char* value) {
         addStr(value);
     }
+    void operator+=(const char* value) {
+        addStr(value);
+    }
     void operator=(const __FlashStringHelper* value) {
+        addStr(value);
+    }
+    void operator+=(const __FlashStringHelper* value) {
         addStr(value);
     }
     void operator=(const String& value) {
         addStr(value);
     }
+    void operator+=(const String& value) {
+        addStr(value);
+    }
     void operator=(String& value) {
+        addStr(value);
+    }
+    void operator+=(String& value) {
         addStr(value);
     }
 
@@ -118,6 +130,9 @@ class string {
 
     // добавить bool
     void operator=(const bool& value) {
+        addBool(value);
+    }
+    void operator+=(const bool& value) {
         addBool(value);
     }
 
@@ -142,6 +157,9 @@ class string {
     void operator=(const double& value) {
         addFloat(value);
     }
+    void operator+=(const double& value) {
+        addFloat(value);
+    }
 
     // добавить int
     string& addInt(AnyText key, AnyValue value) {
@@ -160,25 +178,49 @@ class string {
     void operator=(const int8_t& value) {
         addInt(value);
     }
+    void operator+=(const int8_t& value) {
+        addInt(value);
+    }
     void operator=(const uint8_t& value) {
+        addInt(value);
+    }
+    void operator+=(const uint8_t& value) {
         addInt(value);
     }
     void operator=(const int16_t& value) {
         addInt(value);
     }
+    void operator+=(const int16_t& value) {
+        addInt(value);
+    }
     void operator=(const uint16_t& value) {
+        addInt(value);
+    }
+    void operator+=(const uint16_t& value) {
         addInt(value);
     }
     void operator=(const int32_t& value) {
         addInt(value);
     }
+    void operator+=(const int32_t& value) {
+        addInt(value);
+    }
     void operator=(const uint32_t& value) {
+        addInt(value);
+    }
+    void operator+=(const uint32_t& value) {
         addInt(value);
     }
     void operator=(const int64_t& value) {
         addInt(value);
     }
+    void operator+=(const int64_t& value) {
+        addInt(value);
+    }
     void operator=(const uint64_t& value) {
+        addInt(value);
+    }
+    void operator+=(const uint64_t& value) {
         addInt(value);
     }
 

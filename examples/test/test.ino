@@ -16,9 +16,9 @@ void setup() {
 
     gs.beginArr("array");
     gs.addFloat(3.14);
-    gs = "text";
-    gs = 12345;
-    gs = true;
+    gs += "text";
+    gs += 12345;
+    gs += true;
     gs.endArr();
     
     gs.endObj();  // завершить объект

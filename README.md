@@ -325,6 +325,14 @@ gs.addFloat(F("float"), 3.14);  // float
 gs["float2"] = 3.14;            // или так
 gs["bool"] = false;             // Bool значение
 gs.endObj();                    // завершить объект 2
+
+gs.beginArr("array");           // начать массив
+gs.addFloat(3.14);              // в массив - без ключа
+gs += "text";
+gs += 12345;
+gs += true;
+gs.endArr();                    // завершить массив
+
 gs.endObj();                    // завершить объект 1
 
 gs.end();                       // ЗАВЕРШИТЬ ПАКЕТ (обязательно вызывается в конце)
