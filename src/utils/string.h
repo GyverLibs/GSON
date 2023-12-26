@@ -144,9 +144,10 @@ class string {
     }
 
     // добавить int
-    string& addInt(AnyText key, const AnyValue& value) {
+    string& addInt(AnyText key, AnyValue value) {
         addKey(key);
-        return addInt(value);
+        value.toString(s);
+        return comma();
     }
 
     // добавить int
