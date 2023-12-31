@@ -420,7 +420,7 @@ class DocCore {
                             buf.type = Type::Bool;
                             break;
                         case '-':
-                        case '1' ... '9':
+                        case '0' ... '9':
                             buf.type = Type::Int;
                             break;
                         default:
