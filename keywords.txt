@@ -45,7 +45,7 @@ end	KEYWORD2
 add	KEYWORD2
 addKey	KEYWORD2
 addRaw	KEYWORD2
-addStr	KEYWORD2
+addString	KEYWORD2
 addBool	KEYWORD2
 addFloat	KEYWORD2
 addInt	KEYWORD2

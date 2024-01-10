@@ -39,13 +39,13 @@ class string {
     }
 
     // прибавить gson::string. Будет добавлена запятая
-    string& add(const string& str) {
+    string& add(string& str) {
         s += str.s;
         return comma();
     }
 
     // прибавить gson::string. Будет добавлена запятая
-    void operator+=(const string& str) {
+    void operator+=(string& str) {
         add(str);
     }
 
@@ -73,50 +73,64 @@ class string {
         return *this;
     }
 
-    // прибавить текст (строка любого типа)
-    void operator+=(AnyText str) {
-        _addText(str);
-    }
+    // // прибавить текст (строка любого типа)
+    // void operator+=(AnyText str) {
+    //     _addText(str);
+    // }
 
+    // ======================
     // добавить строку (строка любого типа)
-    string& addStr(AnyText key, AnyText value) {
+    string& __attribute__((deprecated)) addStr(AnyText key, AnyText value) {
         addKey(key);
         return addStr(value);
     }
 
     // добавить строку (строка любого типа)
-    string& addStr(AnyText value) {
+    string& __attribute__((deprecated)) addStr(AnyText value) {
+        _text(value, true);
+        return comma();
+    }
+    // ======================
+
+    // добавить строку (строка любого типа)
+    string& addString(AnyText key, AnyText value) {
+        addKey(key);
+        return addString(value);
+    }
+
+    // добавить строку (строка любого типа)
+    string& addString(AnyText value) {
         _text(value, true);
         return comma();
     }
 
     // добавить строку (строка любого типа)
     void operator=(const char* value) {
-        addStr(value);
+        addString(value);
     }
     void operator+=(const char* value) {
-        addStr(value);
+        addString(value);
     }
 
     void operator=(const __FlashStringHelper* value) {
-        addStr(value);
+        addString(value);
     }
     void operator+=(const __FlashStringHelper* value) {
-        addStr(value);
+        addString(value);
     }
 
     void operator=(const String& value) {
-        addStr(value);
+        addString(value);
     }
     void operator+=(const String& value) {
-        addStr(value);
+        addString(value);
     }
 
     void operator=(String& value) {
-        addStr(value);
+        addString(value);
     }
     void operator+=(String& value) {
-        addStr(value);
+        addString(value);
     }
 
     // добавить bool
@@ -167,13 +181,13 @@ class string {
     // добавить int
     string& addInt(AnyText key, AnyValue value) {
         addKey(key);
-        value.toString(s);
+        value.addString(s);
         return comma();
     }
 
     // добавить int
     string& addInt(AnyValue value) {
-        value.toString(s);
+        value.addString(s);
         return comma();
     }
 
@@ -341,7 +355,7 @@ class string {
                 p = c;
             }
         } else {
-            value.toString(s);
+            value.addString(s);
         }
     }
 };

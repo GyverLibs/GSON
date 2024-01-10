@@ -3,16 +3,16 @@
 
 void setup() {
     Serial.begin(115200);
-    gson::string gs;                // создать строку
-    gs.beginObj();                  // начать объект
-    gs.addStr("str1", F("value"));  // добавить строковое значение
-    gs["str2"] = "value2";          // так тоже можно
-    gs["int"] = (int32_t)12345;     // целочисленное
-    gs.beginObj("obj");             // вложенный объект
-    gs.addFloat(F("float"), 3.14);  // float
-    gs["float2"] = 3.14;            // или так
-    gs["bool"] = false;             // Bool значение
-    gs.endObj();                    // завершить объект
+    gson::string gs;                   // создать строку
+    gs.beginObj();                     // начать объект
+    gs.addString("str1", F("value"));  // добавить строковое значение
+    gs["str2"] = "value2";             // так тоже можно
+    gs["int"] = (int32_t)12345;        // целочисленное
+    gs.beginObj("obj");                // вложенный объект
+    gs.addFloat(F("float"), 3.14);     // float
+    gs["float2"] = 3.14;               // или так
+    gs["bool"] = false;                // Bool значение
+    gs.endObj();                       // завершить объект
 
     gs.beginArr("array");
     gs.addFloat(3.14);
@@ -20,7 +20,7 @@ void setup() {
     gs += 12345;
     gs += true;
     gs.endArr();
-    
+
     gs.endObj();  // завершить объект
     gs.end();     // завершить пакет
 

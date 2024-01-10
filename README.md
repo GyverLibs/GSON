@@ -144,7 +144,7 @@ void clear();               // очистить строку
 bool reserve(uint16_t res); // зарезервировать строку
 
 // прибавить gson::string. Будет добавлена запятая
-string& add(const string& str);
+string& add(string& str);
 
 // добавить ключ (строка любого типа)
 string& addKey(AnyText key);
@@ -153,8 +153,8 @@ string& addKey(AnyText key);
 string& addRaw(AnyText str, bool esc = false);
 
 // добавить строку (строка любого типа)
-string& addStr(AnyText key, AnyText value);
-string& addStr(AnyText value);
+string& addString(AnyText key, AnyText value);
+string& addString(AnyText value);
 
 // добавить bool
 string& addBool(AnyText key, const bool& value);
@@ -315,29 +315,30 @@ switch (doc[SH("str")].hash()) {
 ### Сборка
 JSON строка собирается **линейно** в обычную `String`-строку, что очень просто и приятно для микроконтроллера:
 ```cpp
-gson::string gs;                // создать строку
-gs.beginObj();                  // начать объект 1
-gs.addStr("str1", F("value"));  // добавить строковое значение
-gs["str2"] = "value2";          // так тоже можно
-gs["int"] = 12345;              // целочисленное
-gs.beginObj("obj");             // вложенный объект 2
-gs.addFloat(F("float"), 3.14);  // float
-gs["float2"] = 3.14;            // или так
-gs["bool"] = false;             // Bool значение
-gs.endObj();                    // завершить объект 2
+gson::string gs;                 // создать строку
+gs.beginObj();                   // начать объект 1
+gs.addString("str1", F("value"));// добавить строковое значение
+gs["str2"] = "value2";           // так тоже можно
+gs["int"] = 12345;               // целочисленное
+gs.beginObj("obj");              // вложенный объект 2
+gs.addFloat(F("float"), 3.14);   // float
+gs["float2"] = 3.14;             // или так
+gs["bool"] = false;              // Bool значение
+gs.endObj();                     // завершить объект 2
 
-gs.beginArr("array");           // начать массив
-gs.addFloat(3.14);              // в массив - без ключа
-gs += "text";
-gs += 12345;
-gs += true;
-gs.endArr();                    // завершить массив
+gs.beginArr("array");            // начать массив
+gs.addFloat(3.14);               // в массив - без ключа
+gs += "text";                    // добавить значение (в данном случае в массив)
+gs += 12345;                     // добавить значение (в данном случае в массив)
+gs += true;                      // добавить значение (в данном случае в массив)
+gs.endArr();                     // завершить массив
 
-gs.endObj();                    // завершить объект 1
+gs.endObj();                     // завершить объект 1
 
-gs.end();                       // ЗАВЕРШИТЬ ПАКЕТ (обязательно вызывается в конце)
+gs.end();                        // ЗАВЕРШИТЬ ПАКЕТ (обязательно вызывается в конце)
 
-Serial.println(gs);             // вывод в порт
+Serial.println(gs);              // вывод в порт
+Serial.println(gs.s);            // вывод в порт (или так)
 ```
 
 <a id="versions"></a>
