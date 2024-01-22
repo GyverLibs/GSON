@@ -4,9 +4,6 @@
 
 namespace gson {
 
-using sutil::AnyText;
-using sutil::AnyValue;
-
 class string {
    public:
     // доступ к строке
@@ -41,7 +38,8 @@ class string {
     // прибавить gson::string. Будет добавлена запятая
     string& add(string& str) {
         s += str.s;
-        return comma();
+        comma();
+        return *this;
     }
 
     // прибавить gson::string. Будет добавлена запятая
@@ -52,56 +50,38 @@ class string {
     // =============== KEY ===============
 
     // добавить ключ (строка любого типа)
-    string& addKey(AnyText key) {
+    string& addKey(const sutil::AnyText& key) {
         if (key.valid()) {
-            _text(key);
-            s += ':';
+            _addStr(key, false);
+            colon();
         }
         return *this;
     }
 
     // добавить ключ (строка любого типа)
-    string& operator[](AnyText key) {
+    string& operator[](const sutil::AnyText& key) {
         return addKey(key);
     }
 
     // =============== VALUE ===============
 
-    // прибавить текст (строка любого типа)
-    string& addRaw(AnyText str, bool esc = false) {
-        _addText(str, esc);
+    // прибавить текст (строка любого типа) без запятой и кавычек
+    string& addRaw(const sutil::AnyText& str, bool escape = true) {
+        _addRaw(str, escape);
         return *this;
     }
 
-    // // прибавить текст (строка любого типа)
-    // void operator+=(AnyText str) {
-    //     _addText(str);
-    // }
-
-    // ======================
     // добавить строку (строка любого типа)
-    string& __attribute__((deprecated)) addStr(AnyText key, AnyText value) {
+    string& addString(const sutil::AnyText& key, const sutil::AnyText& value, bool escape = true) {
         addKey(key);
-        return addStr(value);
+        return addString(value, escape);
     }
 
     // добавить строку (строка любого типа)
-    string& __attribute__((deprecated)) addStr(AnyText value) {
-        _text(value, true);
-        return comma();
-    }
-    // ======================
-
-    // добавить строку (строка любого типа)
-    string& addString(AnyText key, AnyText value) {
-        addKey(key);
-        return addString(value);
-    }
-
-    // добавить строку (строка любого типа)
-    string& addString(AnyText value) {
-        _text(value, true);
-        return comma();
+    string& addString(const sutil::AnyText& value, bool escape = true) {
+        _addStr(value, escape);
+        comma();
+        return *this;
     }
 
     // добавить строку (строка любого типа)
@@ -134,7 +114,7 @@ class string {
     }
 
     // добавить bool
-    string& addBool(AnyText key, const bool& value) {
+    string& addBool(const sutil::AnyText& key, const bool& value) {
         addKey(key);
         return addBool(value);
     }
@@ -142,7 +122,8 @@ class string {
     // добавить bool
     string& addBool(const bool& value) {
         s += value ? F("true") : F("false");
-        return comma();
+        comma();
+        return *this;
     }
 
     // добавить bool
@@ -154,7 +135,7 @@ class string {
     }
 
     // добавить float
-    string& addFloat(AnyText key, const double& value, uint8_t dec = 2) {
+    string& addFloat(const sutil::AnyText& key, const double& value, uint8_t dec = 2) {
         addKey(key);
         return addFloat(value, dec);
     }
@@ -167,7 +148,8 @@ class string {
             dtostrf(value, dec + 2, dec, buf);
             s += buf;
         }
-        return comma();
+        comma();
+        return *this;
     }
 
     // добавить float
@@ -179,16 +161,18 @@ class string {
     }
 
     // добавить int
-    string& addInt(AnyText key, AnyValue value) {
+    string& addInt(const sutil::AnyText& key, const sutil::AnyValue& value) {
         addKey(key);
         value.addString(s);
-        return comma();
+        comma();
+        return *this;
     }
 
     // добавить int
-    string& addInt(AnyValue value) {
+    string& addInt(const sutil::AnyValue& value) {
         value.addString(s);
-        return comma();
+        comma();
+        return *this;
     }
 
     // добавить int
@@ -265,7 +249,7 @@ class string {
     // =============== CONTAINER ===============
 
     // начать объект
-    string& beginObj(AnyText key = AnyText()) {
+    string& beginObj(const sutil::AnyText& key = sutil::AnyText()) {
         addKey(key);
         s += '{';
         return *this;
@@ -274,11 +258,12 @@ class string {
     // завершить объект
     string& endObj() {
         _replaceComma('}');
-        return comma();
+        comma();
+        return *this;
     }
 
     // начать массив
-    string& beginArr(AnyText key = AnyText()) {
+    string& beginArr(const sutil::AnyText& key = sutil::AnyText()) {
         addKey(key);
         s += '[';
         return *this;
@@ -287,48 +272,57 @@ class string {
     // завершить массив
     string& endArr() {
         _replaceComma(']');
-        return comma();
-    }
-
-    // двойные кавычки
-    string& dq() {
-        s += '\"';
+        comma();
         return *this;
     }
 
     // запятая
-    string& comma() {
+    void comma() {
+        afterValue();
         s += ',';
-        return *this;
+    }
+
+    // двойные кавычки
+    void quotes() {
+        s += '\"';
     }
 
     // двоеточие
-    string& colon() {
+    void colon() {
         s += ':';
-        return *this;
     }
 
     // =============== PRIVATE ===============
+   protected:
+    // вызывается после добавления значения, но перед запятой
+    virtual void afterValue() {}
+
    private:
-    void _replaceComma(char sym) {
-        if (s[s.length() - 1] == ',') {
+    void _replaceComma(const char& sym) {
+        int16_t len = s.length() - 1;
+        if (s[len] == ',') {
             if (!sym) {
-                s.remove(s.length() - 1);
+                s.remove(len);
                 return;
             }
-            s[s.length() - 1] = sym;
-        } else s += sym;
+            s[len] = sym;
+        } else {
+            s += sym;
+        }
     }
-    void _text(AnyText& value, bool esc = false) {
-        dq();
-        _addText(value, esc);
-        dq();
+    void _addStr(const sutil::AnyText& value, const bool& esc) {
+        quotes();
+        _addRaw(value, esc);
+        quotes();
     }
-    void _addText(AnyText& value, bool esc = false) {
-        if (esc) {
-            s.reserve(s.length() + value.length());
+    void _addRaw(const sutil::AnyText& value, const bool& esc) {
+        if (!esc) {
+            value.addString(s);
+        } else {
+            uint16_t len = value.length();
+            if (!s.reserve(s.length() + len)) return;
             char p = 0;
-            for (uint16_t i = 0; i < value.length(); i++) {
+            for (uint16_t i = 0; i < len; i++) {
                 char c = value.charAt(i);
                 switch (c) {
                     case '\"':
@@ -354,8 +348,6 @@ class string {
                 }
                 p = c;
             }
-        } else {
-            value.addString(s);
         }
     }
 };

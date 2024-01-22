@@ -53,7 +53,7 @@ beginObj	KEYWORD2
 endObj	KEYWORD2
 beginArr	KEYWORD2
 endArr	KEYWORD2
-dq	KEYWORD2
+quotes	KEYWORD2
 comma	KEYWORD2
 colon	KEYWORD2
 

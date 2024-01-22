@@ -6,16 +6,15 @@
 #include "types.h"
 
 namespace gson {
-using sutil::AnyText;
 
-class Entry : public AnyText {
+class Entry : public sutil::AnyText {
    public:
-    Entry(const gsutil::Entries<>* entries, parent_t idx) : AnyText((entries ? entries->get(idx).value : nullptr)), entries(entries), idx(idx) {}
+    Entry(const gsutil::Entries<>* entries, parent_t idx) : sutil::AnyText((entries ? entries->get(idx).value : nullptr)), entries(entries), idx(idx) {}
 
     // ===================== BY KEY =====================
 
     // получить элемент по ключу
-    Entry get(AnyText key) const {
+    Entry get(const sutil::AnyText& key) const {
         if (valid() && entries->get(idx).type == gson::Type::Object && !entries->hashed()) {
             for (uint16_t i = idx + 1; i < entries->length(); i++) {
                 if (entries->get(i).parent == idx &&
@@ -27,7 +26,7 @@ class Entry : public AnyText {
     }
 
     // содержит элемент с указанным ключом
-    bool includes(AnyText key) const {
+    bool includes(const sutil::AnyText& key) const {
         return get(key).valid();
     }
 
@@ -95,7 +94,7 @@ class Entry : public AnyText {
     }
 
     // получить ключ
-    AnyText key() const {
+    sutil::AnyText key() const {
         return (valid() && entries->get(idx).key.str && !entries->hashed()) ? entries->get(idx).key.str : "";
     }
 
@@ -105,7 +104,7 @@ class Entry : public AnyText {
     }
 
     // получить значение
-    AnyText value() const {
+    sutil::AnyText value() const {
         return (valid() && entries->get(idx).value) ? entries->get(idx).value : "";
     }
 
