@@ -150,11 +150,15 @@ string& add(string& str);
 string& addKey(AnyText key);
 
 // прибавить текст (строка любого типа)
-string& addRaw(AnyText str, bool esc = false);
+string& addText(AnyText str, bool esc = false);
 
 // добавить строку (строка любого типа)
 string& addString(AnyText key, AnyText value);
 string& addString(AnyText value);
+
+// добавить строку (строка любого типа) с escape символов
+string& addStringEsc(AnyText key, AnyText value);
+string& addStringEsc(AnyText value);
 
 // добавить bool
 string& addBool(AnyText key, const bool& value);

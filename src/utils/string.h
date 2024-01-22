@@ -63,55 +63,72 @@ class string {
         return addKey(key);
     }
 
-    // =============== VALUE ===============
+    // =============== RAW ===============
 
     // прибавить текст (строка любого типа) без запятой и кавычек
-    string& addRaw(const sutil::AnyText& str, bool escape = true) {
+    string& addText(const sutil::AnyText& str, bool escape = true) {
         _addRaw(str, escape);
         return *this;
     }
 
-    // добавить строку (строка любого типа)
-    string& addString(const sutil::AnyText& key, const sutil::AnyText& value, bool escape = true) {
+    // =============== STRING ===============
+
+    // добавить строку (строка любого типа) с escape символов
+    string& addStringEsc(const sutil::AnyText& key, const sutil::AnyText& value) {
         addKey(key);
-        return addString(value, escape);
+        return addStringEsc(value);
+    }
+
+    // добавить строку (строка любого типа) с escape символов
+    string& addStringEsc(const sutil::AnyText& value) {
+        _addStr(value, true);
+        comma();
+        return *this;
     }
 
     // добавить строку (строка любого типа)
-    string& addString(const sutil::AnyText& value, bool escape = true) {
-        _addStr(value, escape);
+    string& addString(const sutil::AnyText& key, const sutil::AnyText& value) {
+        addKey(key);
+        return addString(value);
+    }
+
+    // добавить строку (строка любого типа)
+    string& addString(const sutil::AnyText& value) {
+        _addStr(value, false);
         comma();
         return *this;
     }
 
     // добавить строку (строка любого типа)
     void operator=(const char* value) {
-        addString(value);
+        addStringEsc(value);
     }
     void operator+=(const char* value) {
-        addString(value);
+        addStringEsc(value);
     }
 
     void operator=(const __FlashStringHelper* value) {
-        addString(value);
+        addStringEsc(value);
     }
     void operator+=(const __FlashStringHelper* value) {
-        addString(value);
+        addStringEsc(value);
     }
 
     void operator=(const String& value) {
-        addString(value);
+        addStringEsc(value);
     }
     void operator+=(const String& value) {
-        addString(value);
+        addStringEsc(value);
     }
 
     void operator=(String& value) {
-        addString(value);
+        addStringEsc(value);
     }
     void operator+=(String& value) {
-        addString(value);
+        addStringEsc(value);
     }
+
+    // =============== BOOL ===============
 
     // добавить bool
     string& addBool(const sutil::AnyText& key, const bool& value) {
@@ -133,6 +150,8 @@ class string {
     void operator+=(const bool& value) {
         addBool(value);
     }
+
+    // =============== FLOAT ===============
 
     // добавить float
     string& addFloat(const sutil::AnyText& key, const double& value, uint8_t dec = 2) {
@@ -160,6 +179,8 @@ class string {
         addFloat(value);
     }
 
+    // =============== INT ===============
+
     // добавить int
     string& addInt(const sutil::AnyText& key, const sutil::AnyValue& value) {
         addKey(key);
@@ -175,7 +196,6 @@ class string {
         return *this;
     }
 
-    // добавить int
     void operator=(const char& value) {
         addInt(value);
     }
