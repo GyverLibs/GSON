@@ -75,27 +75,37 @@ class string {
 
     // добавить строку (строка любого типа) с escape символов
     string& addStringEsc(const sutil::AnyText& key, const sutil::AnyText& value) {
-        addKey(key);
-        return addStringEsc(value);
+        if (key.valid() && value.valid()) {
+            addKey(key);
+            addStringEsc(value);
+        }
+        return *this;
     }
 
     // добавить строку (строка любого типа) с escape символов
     string& addStringEsc(const sutil::AnyText& value) {
-        _addStr(value, true);
-        comma();
+        if (value.valid()) {
+            _addStr(value, true);
+            comma();
+        }
         return *this;
     }
 
     // добавить строку (строка любого типа)
     string& addString(const sutil::AnyText& key, const sutil::AnyText& value) {
-        addKey(key);
-        return addString(value);
+        if (key.valid() && value.valid()) {
+            addKey(key);
+            addString(value);
+        }
+        return *this;
     }
 
     // добавить строку (строка любого типа)
     string& addString(const sutil::AnyText& value) {
-        _addStr(value, false);
-        comma();
+        if (value.valid()) {
+            _addStr(value, false);
+            comma();
+        }
         return *this;
     }
 
@@ -132,8 +142,11 @@ class string {
 
     // добавить bool
     string& addBool(const sutil::AnyText& key, const bool& value) {
-        addKey(key);
-        return addBool(value);
+        if (key.valid()) {
+            addKey(key);
+            addBool(value);
+        }
+        return *this;
     }
 
     // добавить bool
@@ -155,8 +168,11 @@ class string {
 
     // добавить float
     string& addFloat(const sutil::AnyText& key, const double& value, uint8_t dec = 2) {
-        addKey(key);
-        return addFloat(value, dec);
+        if (key.valid()) {
+            addKey(key);
+            addFloat(value, dec);
+        }
+        return *this;
     }
 
     // добавить float
@@ -183,16 +199,20 @@ class string {
 
     // добавить int
     string& addInt(const sutil::AnyText& key, const sutil::AnyValue& value) {
-        addKey(key);
-        value.addString(s);
-        comma();
+        if (key.valid() && value.valid()) {
+            addKey(key);
+            value.addString(s);
+            comma();
+        }
         return *this;
     }
 
     // добавить int
     string& addInt(const sutil::AnyValue& value) {
-        value.addString(s);
-        comma();
+        if (value.valid()) {
+            value.addString(s);
+            comma();
+        }
         return *this;
     }
 
@@ -336,6 +356,8 @@ class string {
         quotes();
     }
     void _addRaw(const sutil::AnyText& value, const bool& esc) {
+        if (!value.valid()) return;
+        
         if (!esc) {
             value.addString(s);
         } else {
