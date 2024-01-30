@@ -197,6 +197,7 @@ class string {
 
     // =============== INT ===============
 
+#ifndef SUTIL_NO_VALUE
     // добавить int
     string& addInt(const sutil::AnyText& key, const sutil::AnyValue& value) {
         if (key.valid() && value.valid()) {
@@ -214,6 +215,25 @@ class string {
         }
         return *this;
     }
+#else
+    // добавить int
+    template <typename T>
+    string& addInt(const sutil::AnyText& key, T value) {
+        if (key.valid()) {
+            addKey(key);
+            addInt(value);
+        }
+        return *this;
+    }
+
+    // добавить int
+    template <typename T>
+    string& addInt(T value) {
+        s += value;
+        comma();
+        return *this;
+    }
+#endif
 
     void operator=(const char& value) {
         addInt(value);
@@ -271,6 +291,7 @@ class string {
         addInt(value);
     }
 
+#ifndef SUTIL_NO_VALUE
     void operator=(const long long& value) {
         addInt(value);
     }
@@ -284,7 +305,7 @@ class string {
     void operator+=(const unsigned long long& value) {
         addInt(value);
     }
-
+#endif
     // =============== CONTAINER ===============
 
     // начать объект
@@ -356,7 +377,7 @@ class string {
     }
     void _addRaw(const sutil::AnyText& value, const bool& esc) {
         if (!value.valid()) return;
-        
+
         if (!esc) {
             value.addString(s);
         } else {
