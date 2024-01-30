@@ -201,8 +201,7 @@ class string {
     string& addInt(const sutil::AnyText& key, const sutil::AnyValue& value) {
         if (key.valid() && value.valid()) {
             addKey(key);
-            value.addString(s);
-            comma();
+            addInt(value);
         }
         return *this;
     }
