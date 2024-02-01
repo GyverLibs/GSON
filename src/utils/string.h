@@ -6,6 +6,10 @@ namespace gson {
 
 class string {
    public:
+    string(uint16_t res = 0) {
+        if (res) reserve(res);
+    }
+
     // доступ к строке
     String s;
 
