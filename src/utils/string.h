@@ -18,6 +18,11 @@ class string {
         return s;
     }
 
+    // доступ к строке
+    operator sutil::AnyText() {
+        return s;
+    }
+
     // очистить строку
     void clear() {
         s = "";
@@ -39,15 +44,22 @@ class string {
         return *this;
     }
 
+    // =============== ADD ===============
+
     // прибавить gson::string. Будет добавлена запятая
-    string& add(string& str) {
+    string& add(const string& str) {
         s += str.s;
         comma();
         return *this;
     }
 
     // прибавить gson::string. Будет добавлена запятая
-    void operator+=(string& str) {
+    void operator+=(const string& str) {
+        add(str);
+    }
+
+    // прибавить gson::string. Будет добавлена запятая
+    void operator=(const string& str) {
         add(str);
     }
 
@@ -56,7 +68,7 @@ class string {
     // добавить ключ (строка любого типа)
     string& addKey(const sutil::AnyText& key) {
         if (key.valid()) {
-            _addStr(key, false);
+            _addRaw(key, true, false);
             colon();
         }
         return *this;
@@ -67,11 +79,11 @@ class string {
         return addKey(key);
     }
 
-    // =============== RAW ===============
+    // =============== TEXT ===============
 
     // прибавить текст (строка любого типа) без запятой и кавычек
     string& addText(const sutil::AnyText& str, bool escape = true) {
-        _addRaw(str, escape);
+        if (str.valid()) _addRaw(str, false, escape);
         return *this;
     }
 
@@ -89,7 +101,7 @@ class string {
     // добавить строку (строка любого типа) с escape символов
     string& addStringEsc(const sutil::AnyText& value) {
         if (value.valid()) {
-            _addStr(value, true);
+            _addRaw(value, true, true);
             comma();
         }
         return *this;
@@ -107,7 +119,7 @@ class string {
     // добавить строку (строка любого типа)
     string& addString(const sutil::AnyText& value) {
         if (value.valid()) {
-            _addStr(value, false);
+            _addRaw(value, true, false);
             comma();
         }
         return *this;
@@ -358,10 +370,49 @@ class string {
 
     // =============== PRIVATE ===============
    protected:
-    // вызывается после добавления значения, но перед запятой
+    // вызывается перед запятой (после добавления значения)
     virtual void afterValue() {}
 
+    // escape символов
+    virtual void escape(const sutil::AnyText& text) {
+        uint16_t len = text.length();
+        if (!s.reserve(s.length() + len)) return;
+        char p = 0;
+        for (uint16_t i = 0; i < len; i++) {
+            char c = text.charAt(i);
+            switch (c) {
+                case '\"':
+                case '\\':
+                    if (p != '\\') s += '\\';
+                    s += c;
+                    break;
+                case '\n':
+                    s += '\\';
+                    s += 'n';
+                    break;
+                case '\r':
+                    s += '\\';
+                    s += 'r';
+                    break;
+                case '\t':
+                    s += '\\';
+                    s += 't';
+                    break;
+                default:
+                    s += c;
+                    break;
+            }
+            p = c;
+        }
+    }
+
    private:
+    void _addRaw(const sutil::AnyText& text, bool quot, bool esc) {
+        if (quot) quotes();
+        if (esc) escape(text);
+        else text.addString(s);
+        if (quot) quotes();
+    }
     void _replaceComma(const char& sym) {
         int16_t len = s.length() - 1;
         if (s[len] == ',') {
@@ -372,48 +423,6 @@ class string {
             s[len] = sym;
         } else {
             s += sym;
-        }
-    }
-    void _addStr(const sutil::AnyText& value, const bool& esc) {
-        quotes();
-        _addRaw(value, esc);
-        quotes();
-    }
-    void _addRaw(const sutil::AnyText& value, const bool& esc) {
-        if (!value.valid()) return;
-
-        if (!esc) {
-            value.addString(s);
-        } else {
-            uint16_t len = value.length();
-            if (!s.reserve(s.length() + len)) return;
-            char p = 0;
-            for (uint16_t i = 0; i < len; i++) {
-                char c = value.charAt(i);
-                switch (c) {
-                    case '\"':
-                    case '\\':
-                        if (p != '\\') s += '\\';
-                        s += c;
-                        break;
-                    case '\n':
-                        s += '\\';
-                        s += 'n';
-                        break;
-                    case '\r':
-                        s += '\\';
-                        s += 'r';
-                        break;
-                    case '\t':
-                        s += '\\';
-                        s += 't';
-                        break;
-                    default:
-                        s += c;
-                        break;
-                }
-                p = c;
-            }
         }
     }
 };
