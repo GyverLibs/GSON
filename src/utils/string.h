@@ -382,7 +382,6 @@ class string : public Printable {
     // escape символов
     virtual void escape(const sutil::AnyText& text) {
         uint16_t len = text.length();
-        if (!s.reserve(s.length() + len)) return;
         char p = 0;
         for (uint16_t i = 0; i < len; i++) {
             char c = text.charAt(i);
@@ -415,8 +414,12 @@ class string : public Printable {
    private:
     void _addRaw(const sutil::AnyText& text, bool quot, bool esc) {
         if (quot) quotes();
-        if (esc) escape(text);
-        else text.addString(s);
+        if (esc) {
+            if (!s.reserve(s.length() + text.length())) return;
+            escape(text);
+        } else {
+            text.addString(s);
+        }
         if (quot) quotes();
     }
     void _replaceComma(const char& sym) {
