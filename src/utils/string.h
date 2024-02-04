@@ -1,10 +1,11 @@
 #pragma once
 #include <Arduino.h>
+#include <Print.h>
 #include <StringUtils.h>
 
 namespace gson {
 
-class string {
+class string : public Printable {
    public:
     string(uint16_t res = 0) {
         if (res) reserve(res);
@@ -21,6 +22,11 @@ class string {
     // доступ к строке
     operator sutil::AnyText() {
         return s;
+    }
+
+    // Напечатать в Print
+    size_t printTo(Print& p) const {
+        return p.print(s);
     }
 
     // очистить строку
