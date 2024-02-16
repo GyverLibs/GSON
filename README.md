@@ -149,8 +149,11 @@ string& add(string& str);
 // добавить ключ (строка любого типа)
 string& addKey(AnyText key);
 
-// прибавить текст (строка любого типа)
-string& addText(AnyText str, bool esc = false);
+// прибавить текст (строка любого типа) без кавычек и запятой
+string& addText(AnyText str);
+
+// прибавить текст (строка любого типа) без кавычек и запятой с escape символов
+string& addTextEsc(AnyText str);
 
 // добавить строку (строка любого типа)
 string& addString(AnyText key, AnyText value);

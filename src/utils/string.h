@@ -88,8 +88,14 @@ class string : public Printable {
     // =============== TEXT ===============
 
     // прибавить текст (строка любого типа) без запятой и кавычек
-    string& addText(const sutil::AnyText& str, bool escape = true) {
-        if (str.valid()) _addRaw(str, false, escape);
+    string& addText(const sutil::AnyText& str) {
+        if (str.valid()) _addRaw(str, false, false);
+        return *this;
+    }
+
+    // прибавить текст (строка любого типа) без запятой и кавычек с escape символов
+    string& addTextEsc(const sutil::AnyText& str) {
+        if (str.valid()) _addRaw(str, false, true);
         return *this;
     }
 
