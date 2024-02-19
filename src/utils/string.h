@@ -431,13 +431,10 @@ class string : public Printable {
     void _replaceComma(const char& sym) {
         int16_t len = s.length() - 1;
         if (s[len] == ',') {
-            if (!sym) {
-                s.remove(len);
-                return;
-            }
-            s[len] = sym;
+            if (!sym) s.remove(len);
+            else s[len] = sym;
         } else {
-            s += sym;
+            if (sym) s += sym;
         }
     }
 };
