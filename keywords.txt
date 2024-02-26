@@ -13,6 +13,8 @@ DocStatic	KEYWORD1
 Type	KEYWORD1
 Error	KEYWORD1
 
+GSON_NO_LEN	KEYWORD1
+
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################

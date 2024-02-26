@@ -49,11 +49,11 @@ class DocCore {
         if (entries[0].type == gson::Type::Object && !entries.hashed()) {
             for (uint16_t i = 1; i < entries.length(); i++) {
                 if (entries[i].parent == 0 && entries[i].key.str && key.compare(entries[i].key.str)) {
-                    return gson::Entry(&entries, i);
+                    return gson::Entry(&entries, i, str);
                 }
             }
         }
-        return gson::Entry(nullptr, 0);
+        return gson::Entry(nullptr, 0, str);
     }
     gson::Entry operator[](const sutil::AnyText& key) {
         return get(key);
@@ -66,11 +66,11 @@ class DocCore {
         if (entries[0].type == gson::Type::Object && entries.hashed()) {
             for (uint16_t i = 1; i < entries.length(); i++) {
                 if (entries[i].parent == 0 && entries[i].key.hash == hash) {
-                    return gson::Entry(&entries, i);
+                    return gson::Entry(&entries, i, str);
                 }
             }
         }
-        return gson::Entry(nullptr, 0);
+        return gson::Entry(nullptr, 0, str);
     }
     gson::Entry operator[](const size_t& hash) {
         return get(hash);
@@ -83,12 +83,12 @@ class DocCore {
         if (entries[0].type == gson::Type::Object || entries[0].type == gson::Type::Array) {
             for (uint16_t i = 1; i < entries.length(); i++) {
                 if (entries[i].parent == 0) {
-                    if (!index) return gson::Entry(&entries, i);
+                    if (!index) return gson::Entry(&entries, i, str);
                     index--;
                 }
             }
         }
-        return gson::Entry(nullptr, 0);
+        return gson::Entry(nullptr, 0, str);
     }
     gson::Entry operator[](int index) {
         return get(index);
@@ -108,7 +108,11 @@ class DocCore {
 
     // прочитать значение по индексу
     sutil::AnyText value(uint16_t idx) {
-        return (idx < length() && entries[idx].value) ? entries[idx].value : "";
+#ifndef GSON_NO_LEN
+        return (idx < length() && entries[idx].value) ? sutil::AnyText((str + entries[idx].value), entries[idx].len) : "";
+#else
+        return (idx < length() && entries[idx].value) ? (str + entries[idx].value) : "";
+#endif
     }
 
     // прочитать родителя по индексу
@@ -286,10 +290,10 @@ class DocCore {
                     case gson::Type::String:
                     case gson::Type::Int:
                     case gson::Type::Float:
-                        p.print(ent.value);
+                        p.print(str + ent.value);
                         break;
                     case gson::Type::Bool:
-                        p.print((ent.value[0] == 't') ? F("true") : F("false"));
+                        p.print((*(str + ent.value) == 't') ? F("true") : F("false"));
                         break;
                     default:
                         break;
@@ -369,24 +373,28 @@ class DocCore {
 
                 case '{':
                 case '[': {
-                    if (p != str) { // not first symb
+                    if (p != str) {  // not first symb
                         if (!(entries[parent].type == gson::Type::Array && (state == State::Idle || state == State::WaitValue)) &&
                             !(entries[parent].type == gson::Type::Object && state == State::WaitValue)) {
                             return gson::Error::UnexOpen;
                         }
                     }
 
-                    gsutil::Entry_t entry = gsutil::Entry_t{buf.key.str, nullptr, parent, (*p == '{') ? gson::Type::Object : gson::Type::Array};
+                    gsutil::Entry_t entry = gsutil::Entry_t{buf.key.str, 0, parent, (*p == '{') ? gson::Type::Object : gson::Type::Array};
                     if (entries.length() == GSON_MAX_INDEX - 1) return gson::Error::IndexOverflow;
                     if (!entries.push(entry)) return gson::Error::Alloc;
 
-                    buf.key.str = buf.value = nullptr;
+                    buf.key.str = nullptr;
+                    buf.value = 0;
+#ifndef GSON_NO_LEN
+                    buf.len = 0;
+#endif
                     state = State::Idle;
                     p++;
 
                     if (depth - 1 == 0) return gson::Error::TooDeep;
                     depth--;
-                    error = _parse(entries.length() - 1);
+                    error = _parse(entries.length() - 1);  // RECURSIVE
                     depth++;
                     if (hasError()) return error;
                 } break;
@@ -406,7 +414,7 @@ class DocCore {
                         return gson::Error::UnexToken;
                     }
 
-                    buf.value = p;
+                    buf.value = p - str;
                     switch (*p) {
                         case 't':
                         case 'f':
@@ -439,20 +447,31 @@ class DocCore {
                             case ']':
                                 end = 1;
                         }
+#ifndef GSON_NO_LEN
+                        if (!buf.len && (end || clearComma || !*p)) {
+                            buf.len = p + 1 - (str + buf.value);
+                        }
+#endif
                         if (end) break;
                         p++;
                     }
                     if (buf.type == gson::Type::Bool) {
-                        uint16_t len = p - buf.value + 1;
-                        if (!(len == 4 && !strncmp_P(buf.value, PSTR("true"), 4)) &&
-                            !(len == 5 && !strncmp_P(buf.value, PSTR("false"), 5))) {
+                        uint16_t len = p + 1 - (str + buf.value);
+                        if (!(len == 4 && !strncmp_P(str + buf.value, PSTR("true"), 4)) &&
+                            !(len == 5 && !strncmp_P(str + buf.value, PSTR("false"), 5))) {
                             return gson::Error::BrokenToken;
                         }
                     }
+#ifndef GSON_NO_LEN
+                    gsutil::Entry_t entry = gsutil::Entry_t{buf.key.str, buf.value, parent, buf.type, buf.len};
+                    buf.len = 0;
+#else
                     gsutil::Entry_t entry = gsutil::Entry_t{buf.key.str, buf.value, parent, buf.type};
+#endif
                     if (entries.length() == GSON_MAX_INDEX - 1) return gson::Error::IndexOverflow;
                     if (!entries.push(entry)) return gson::Error::Alloc;
-                    buf.key.str = buf.value = nullptr;
+                    buf.key.str = nullptr;
+                    buf.value = 0;
                     state = State::Idle;
                 } break;
 
@@ -462,9 +481,9 @@ class DocCore {
                 readStr = 0;
                 p++;
                 if (*p == '\"') {
-                    buf.value = nullptr;
+                    buf.value = 0;
                 } else {
-                    buf.value = p;
+                    buf.value = p - str;
                     while (1) {
                         p = strchr(p + 1, '\"');
                         if (p[-1] != '\\') break;
@@ -472,10 +491,18 @@ class DocCore {
                     }
                 }
                 *p = 0;
+
+#ifndef GSON_NO_LEN
+                buf.len = p - (str + buf.value);
+                gsutil::Entry_t entry = gsutil::Entry_t{buf.key.str, buf.value, parent, gson::Type::String, buf.len};
+                buf.len = 0;
+#else
                 gsutil::Entry_t entry = gsutil::Entry_t{buf.key.str, buf.value, parent, gson::Type::String};
+#endif
                 if (entries.length() == GSON_MAX_INDEX - 1) return gson::Error::IndexOverflow;
                 if (!entries.push(entry)) return gson::Error::Alloc;
-                buf.key.str = buf.value = nullptr;
+                buf.key.str = nullptr;
+                buf.value = 0;
                 state = State::Idle;
             }
 

@@ -11,9 +11,12 @@ struct Entry_t {
         const char* str;
         size_t hash;
     } key;
-    const char* value;
+    uint16_t value;
     gson::parent_t parent;
     gson::Type type;
+#ifndef GSON_NO_LEN
+    uint16_t len;
+#endif
 };
 
 // capacity -1 == dynamic

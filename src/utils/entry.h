@@ -9,7 +9,11 @@ namespace gson {
 
 class Entry : public sutil::AnyText {
    public:
-    Entry(const gsutil::Entries<>* entries, parent_t idx) : sutil::AnyText((entries ? entries->get(idx).value : nullptr)), entries(entries), idx(idx) {}
+#ifndef GSON_NO_LEN
+    Entry(const gsutil::Entries<>* entries, parent_t idx, const char* str) : sutil::AnyText((entries ? (str + entries->get(idx).value) : nullptr), entries->get(idx).len), entries(entries), idx(idx), str(str) {}
+#else
+    Entry(const gsutil::Entries<>* entries, parent_t idx, const char* str) : sutil::AnyText(entries ? (str + entries->get(idx).value) : nullptr), entries(entries), idx(idx), str(str) {}
+#endif
 
     // ===================== BY KEY =====================
 
@@ -19,10 +23,10 @@ class Entry : public sutil::AnyText {
             for (uint16_t i = idx + 1; i < entries->length(); i++) {
                 if (entries->get(i).parent == idx &&
                     entries->get(i).key.str &&
-                    key.compare(entries->get(i).key.str)) return Entry(entries, i);
+                    key.compare(entries->get(i).key.str)) return Entry(entries, i, str);
             }
         }
-        return Entry(nullptr, 0);
+        return Entry(nullptr, 0, str);
     }
 
     // содержит элемент с указанным ключом
@@ -50,10 +54,10 @@ class Entry : public sutil::AnyText {
     Entry get(const size_t& hash) const {
         if (valid() && entries->get(idx).type == gson::Type::Object && entries->hashed()) {
             for (uint16_t i = idx + 1; i < entries->length(); i++) {
-                if (entries->get(i).parent == idx && entries->get(i).key.hash == hash) return Entry(entries, i);
+                if (entries->get(i).parent == idx && entries->get(i).key.hash == hash) return Entry(entries, i, str);
             }
         }
-        return Entry(nullptr, 0);
+        return Entry(nullptr, 0, str);
     }
 
     // содержит элемент с указанным хэшем ключа
@@ -73,12 +77,12 @@ class Entry : public sutil::AnyText {
         if (_isContainer()) {
             for (uint16_t i = idx + 1; i < entries->length(); i++) {
                 if (entries->get(i).parent == idx) {
-                    if (!index) return Entry(entries, i);
+                    if (!index) return Entry(entries, i, str);
                     index--;
                 }
             }
         }
-        return Entry(nullptr, 0);
+        return Entry(nullptr, 0, str);
     }
 
     // доступ по индексу (контейнер - Array или Object)
@@ -105,7 +109,7 @@ class Entry : public sutil::AnyText {
 
     // получить значение
     sutil::AnyText value() const {
-        return (valid() && entries->get(idx).value) ? entries->get(idx).value : "";
+        return *this;
     }
 
     // получить размер для объектов и массивов
@@ -126,6 +130,7 @@ class Entry : public sutil::AnyText {
    private:
     const gsutil::Entries<>* entries = nullptr;
     parent_t idx = 0;
+    const char* str;
 
     bool _isContainer() const {
         return valid() && (entries->get(idx).type == gson::Type::Array || entries->get(idx).type == gson::Type::Object);
