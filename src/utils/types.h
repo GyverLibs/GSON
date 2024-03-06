@@ -6,7 +6,7 @@ namespace gson {
 
 #if (UINT_MAX == UINT32_MAX)
 typedef uint16_t parent_t;
-#define GSON_MAX_INDEX 0xffff
+#define GSON_MAX_INDEX 0x1ff
 #else
 // 16 бит адрес не имеет смысла на слабых платформах
 typedef uint8_t parent_t;
@@ -41,6 +41,9 @@ enum class Error : uint8_t {
     BrokenContainer,
     EmptyKey,
     IndexOverflow,
+    LongPacket,
+    LongKey,
+    EmptyString,
 };
 
 }  // namespace gson

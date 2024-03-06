@@ -8,12 +8,13 @@
 
 GSON	KEYWORD1
 Entry	KEYWORD1
-Doc	KEYWORD1
-DocStatic	KEYWORD1
+Parser	KEYWORD1
+ParserStatic	KEYWORD1
 Type	KEYWORD1
 Error	KEYWORD1
 
-GSON_NO_LEN	KEYWORD1
+GSON_NO_HASH	KEYWORD1
+GSON_MAX_SPEED	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
@@ -82,6 +83,9 @@ BrokenString	LITERAL1
 BrokenContainer	LITERAL1
 EmptyKey	LITERAL1
 IndexOverflow	LITERAL1
+LongPacket	LITERAL1
+LongKey	LITERAL1
+EmptyString	LITERAL1
 
 Object	LITERAL1
 Array	LITERAL1

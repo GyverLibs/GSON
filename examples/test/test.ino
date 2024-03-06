@@ -1,8 +1,12 @@
 #include <Arduino.h>
+
+// #define GSON_NO_HASH
 #include <GSON.h>
 
 void setup() {
     Serial.begin(115200);
+    Serial.println();
+
     gson::string gs;                   // создать строку
     gs.beginObj();                     // начать объект
     gs.addString("str1", F("value"));  // добавить строковое значение
@@ -14,44 +18,62 @@ void setup() {
     gs["bool"] = false;                // Bool значение
     gs.endObj();                       // завершить объект
 
+    gs.beginObj("obj2");
     gs.beginArr("array");
     gs.addFloat(3.14);
-    gs += "text";
+    gs += "text";  // в массиве можно так
     gs += 12345;
     gs += true;
     gs.endArr();
+    gs.endObj();
+    gs["last"] = "kekpek";
 
     gs.endObj();  // завершить объект
     gs.end();     // завершить пакет
 
+    Serial.println("==== PACKET ====");
     Serial.println(gs);
-
-    gson::Doc doc(10);
-    doc.parse(gs);
-
-    Serial.println(doc[0]);
-    Serial.println(doc["str2"]);
-    Serial.println(doc[F("int")]);
-    Serial.println(doc["obj"]["float"]);
-    Serial.println(doc["array"][0]);
-    Serial.println(doc["array"][1]);
-    Serial.println(doc["array"][2]);
-    Serial.println();
     Serial.println();
 
-    for (uint16_t i = 0; i < doc.length(); i++) {
-        // if (doc.type(i) == gson::Type::Object || doc.type(i) == gson::Type::Array) continue; // пропустить контейнеры
+    gson::Parser p(10);
+    p.parse(gs);
+
+    Serial.println("==== READ ====");
+    Serial.println(p[0]);
+    Serial.println(p["str2"]);
+    Serial.println(p[F("int")]);
+    Serial.println(p["obj"]["float"]);
+    Serial.println(p["obj2"]["array"][0]);
+    Serial.println(p["obj2"]["array"][1]);
+    Serial.println(p["obj2"]["array"][2]);
+
+    Serial.println(p["no-key"]);
+    Serial.println(p["no-key"]["no-key"]);
+    Serial.println();
+
+    p.hashKeys();
+    Serial.println("==== HASH ACCESS ====");
+    Serial.println(p[sutil::SH("str2")]);
+    Serial.println(p[sutil::SH("obj")][sutil::SH("float")]);
+    Serial.println();
+
+    Serial.println("==== CHUNKS ====");
+    for (uint16_t i = 0; i < p.length(); i++) {
         Serial.print(i);
         Serial.print(". [");
-        Serial.print(doc.readType(i));
+        Serial.print(p.readType(i));
         Serial.print("] ");
-        Serial.print(doc.key(i));
+        Serial.print(p.key(i));
         Serial.print(":");
-        Serial.print(doc.value(i));
+        Serial.print(p.value(i));
         Serial.print(" {");
-        Serial.print(doc.parent(i));
+        Serial.print(p.parent(i));
         Serial.println("}");
     }
+    Serial.println();
+
+    Serial.println("==== STRINGIFY ====");
+    p.stringify(&Serial);
 }
 
 void loop() {

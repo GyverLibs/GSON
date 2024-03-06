@@ -4,19 +4,51 @@
 
 #include "types.h"
 
+#define GSON_MAX_LEN 0xffff
+#define GSON_MAX_KEY_LEN 32
+
 namespace gsutil {
 
 struct Entry_t {
-    union {
-        const char* str;
-        size_t hash;
-    } key;
-    uint16_t value;
-    gson::parent_t parent;
-    gson::Type type;
-#ifndef GSON_NO_LEN
-    uint16_t len;
+    gson::parent_t parent : 9;
+    gson::Type type : 3;
+    uint16_t key_len : 5;
+    uint16_t val_len : 15;
+
+    uint16_t key_offs;
+    uint16_t val_offs;
+#ifndef GSON_NO_HASH
+    size_t key_hash;
 #endif
+
+    void reset() {
+        key_offs = val_offs = key_len = val_len = 0;
+        type = gson::Type::None;
+    }
+
+    inline const char* key(const char* str) {
+        return str + key_offs;
+    }
+    inline const char* value(const char* str) {
+        return str + val_offs;
+    }
+
+    inline sutil::AnyText keyAT(const char* str) {
+        return sutil::AnyText(key(str), key_len);
+    }
+    inline sutil::AnyText valueAT(const char* str) {
+        return sutil::AnyText(value(str), val_len);
+    }
+
+    bool isContainer() {
+        return type == gson::Type::Array || type == gson::Type::Object;
+    }
+    inline bool isObject() {
+        return type == gson::Type::Object;
+    }
+    inline bool isArray() {
+        return type == gson::Type::Array;
+    }
 };
 
 // capacity -1 == dynamic
@@ -73,19 +105,21 @@ class Entries {
         return _len;
     }
 
-    Entry_t& get(int idx) const {
-        return _eptr[idx >= 0 ? idx : 0];
+    Entry_t& get(uint16_t idx) const {
+        return _eptr[idx < _len ? idx : 0];
     }
 
     Entry_t& operator[](int idx) const {
-        return get(idx);
+        return get((uint16_t)idx);
     }
 
-    void hashKeys() {
+    void hashKeys(const char* str) {
+#ifndef GSON_NO_HASH
         for (uint16_t i = 0; i < _len; i++) {
-            _eptr[i].key.hash = sutil::hash(_eptr[i].key.str);
+            _eptr[i].key_hash = _eptr[i].keyAT(str).hash();
         }
         _hashed = 1;
+#endif
     }
 
     bool hashed() const {
