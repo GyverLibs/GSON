@@ -52,7 +52,7 @@ class Entry : public sutil::AnyText {
     // ===================== BY HASH =====================
 
     // получить элемент по хэшу ключа
-    Entry get(const size_t& hash) const {
+    Entry get(size_t hash) const {
 #ifndef GSON_NO_HASH
         if (valid() && ens->get(idx).isObject() && ens->hashed()) {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
@@ -64,20 +64,20 @@ class Entry : public sutil::AnyText {
     }
 
     // содержит элемент с указанным хэшем ключа
-    bool includes(const size_t& hash) const {
+    bool includes(size_t hash) const {
         return get(hash).valid();
     }
 
     // доступ по хэшу ключа (контейнер - Object)
-    Entry operator[](const size_t& hash) const {
+    Entry operator[](size_t hash) const {
         return get(hash);
     }
 
     // ===================== BY INDEX =====================
 
     // получить элемент по индексу
-    Entry get(uint16_t index) const {
-        if (valid() && index < ens->length() && ens->get(idx).isContainer()) {
+    Entry get(int index) const {
+        if (valid() && (uint16_t)index < ens->length() && ens->get(idx).isContainer()) {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
                 if (ens->get(i).parent == idx) {
                     if (!index) return Entry(ens, i, str);
@@ -90,7 +90,7 @@ class Entry : public sutil::AnyText {
 
     // доступ по индексу (контейнер - Array или Object)
     Entry operator[](int index) const {
-        return get((uint16_t)index);
+        return get(index);
     }
 
     // ===================== MISC =====================

@@ -62,9 +62,9 @@ class ParserCore {
     // ===================== BY HASH =====================
 
     // доступ по хэшу ключа (главный контейнер - Object)
-    gson::Entry get(const size_t& hash) {
+    gson::Entry get(size_t hash) {
 #ifndef GSON_NO_HASH
-        if (length() && entries[0].type == gson::Type::Object && entries.hashed()) {
+        if (length() && entries[0].is(gson::Type::Object) && entries.hashed()) {
             for (uint16_t i = 1; i < length(); i++) {
                 if (entries[i].parent == 0 && entries[i].key_hash == hash) {
                     return gson::Entry(&entries, i, str);
@@ -74,15 +74,15 @@ class ParserCore {
 #endif
         return gson::Entry(nullptr, 0, str);
     }
-    gson::Entry operator[](const size_t& hash) {
+    gson::Entry operator[](size_t hash) {
         return get(hash);
     }
 
     // ===================== BY INDEX =====================
 
     // доступ по индексу в главный контейнер - Array или Object
-    gson::Entry get(uint16_t index) {
-        if (length() && index < length() && entries[0].isContainer()) {
+    gson::Entry get(int index) {
+        if (length() && (uint16_t)index < length() && entries[0].isContainer()) {
             for (uint16_t i = 1; i < length(); i++) {
                 if (entries[i].parent == 0) {
                     if (!index) return gson::Entry(&entries, i, str);
@@ -93,42 +93,42 @@ class ParserCore {
         return gson::Entry(nullptr, 0, str);
     }
     gson::Entry operator[](int index) {
-        return get((uint16_t)index);
+        return get(index);
     }
 
     // ===================== MISC =====================
 
     // прочитать ключ по индексу
-    sutil::AnyText key(uint16_t idx) {
-        return (length() && idx < length()) ? entries[idx].keyAT(str) : "";
+    sutil::AnyText key(int idx) {
+        return (length() && (uint16_t)idx < length()) ? entries[idx].keyAT(str) : "";
     }
 
     // прочитать хэш ключа по индексу
-    size_t keyHash(uint16_t idx) {
+    size_t keyHash(int idx) {
 #ifndef GSON_NO_HASH
-        return (length() && idx < length()) ? (entries.hashed() ? entries[idx].key_hash : entries[idx].keyAT(str).hash()) : 0;
+        return (length() && (uint16_t)idx < length()) ? (entries.hashed() ? entries[idx].key_hash : entries[idx].keyAT(str).hash()) : 0;
 #else
         return 0;
 #endif
     }
 
     // прочитать значение по индексу
-    sutil::AnyText value(uint16_t idx) {
-        return (length() && idx < length()) ? entries[idx].valueAT(str) : "";
+    sutil::AnyText value(int idx) {
+        return (length() && (uint16_t)idx < length()) ? entries[idx].valueAT(str) : "";
     }
 
     // прочитать родителя по индексу
-    gson::parent_t parent(uint16_t idx) {
-        return (idx < length()) ? entries[idx].parent : 0;
+    gson::parent_t parent(int idx) {
+        return ((uint16_t)idx < length()) ? entries[idx].parent : 0;
     }
 
     // получить тип по индексу
-    gson::Type type(uint16_t idx) {
-        return (idx < length()) ? entries[idx].type : gson::Type::None;
+    gson::Type type(int idx) {
+        return ((uint16_t)idx < length()) ? entries[idx].type : gson::Type::None;
     }
 
     // прочитать тип по индексу
-    const __FlashStringHelper* readType(uint16_t index) {
+    const __FlashStringHelper* readType(int index) {
         switch (type(index)) {
             case gson::Type::Object:
                 return F("Object");
@@ -298,8 +298,8 @@ class ParserCore {
                     p.print(ent.keyAT(str));
                     p.print("\":");
                 }
-                if (ent.type == gson::Type::String) p.print('\"');
-                switch (ent.type) {
+                if (ent.is(gson::Type::String)) p.print('\"');
+                switch ((gson::Type)ent.type) {
                     case gson::Type::String:
                     case gson::Type::Int:
                     case gson::Type::Float:
@@ -311,7 +311,7 @@ class ParserCore {
                     default:
                         break;
                 }
-                if (ent.type == gson::Type::String) p.print('\"');
+                if (ent.is(gson::Type::String)) p.print('\"');
                 idx++;
             }
         }
@@ -337,7 +337,7 @@ class ParserCore {
                     break;
 
                 case '\"':
-                    switch (entries[parent].type) {
+                    switch ((gson::Type)entries[parent].type) {
                         case gson::Type::Array:
                             switch (state) {
                                 case State::Idle:
@@ -434,7 +434,7 @@ class ParserCore {
                     }
                     while (true) {
                         if (*p == '.') {
-                            if (buf.type == gson::Type::Int) buf.type = gson::Type::Float;
+                            if (buf.is(gson::Type::Int)) buf.type = gson::Type::Float;
                             else return gson::Error::UnknownToken;
                         }
                         if (!p[1]) return gson::Error::BrokenToken;
@@ -456,7 +456,7 @@ class ParserCore {
                         if (end) break;
                         p++;
                     }
-                    if (buf.type == gson::Type::Bool) {
+                    if (buf.is(gson::Type::Bool)) {
                         if (!(buf.val_len == 4 && !strncmp_P(buf.value(str), PSTR("true"), 4)) &&
                             !(buf.val_len == 5 && !strncmp_P(buf.value(str), PSTR("false"), 5))) {
                             return gson::Error::BrokenToken;
@@ -494,7 +494,7 @@ class ParserCore {
             }
 
             p++;
-            if (p - str >= GSON_MAX_LEN) return gson::Error::LongPacket;
+            if (p - str >= (int32_t)GSON_MAX_LEN) return gson::Error::LongPacket;
         }  // while
 
         return (parent == 0) ? gson::Error::None : gson::Error::BrokenContainer;

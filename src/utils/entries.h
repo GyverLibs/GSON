@@ -10,7 +10,11 @@
 namespace gsutil {
 
 struct Entry_t {
+#if (UINT_MAX == UINT32_MAX)
     gson::parent_t parent : 9;
+#else
+    gson::parent_t parent;
+#endif
     gson::Type type : 3;
     uint16_t key_len : 5;
     uint16_t val_len : 15;
@@ -21,6 +25,9 @@ struct Entry_t {
     size_t key_hash;
 #endif
 
+    inline bool is(gson::Type t) {
+        return type == t;
+    }
     void reset() {
         key_offs = val_offs = key_len = val_len = 0;
         type = gson::Type::None;
@@ -41,13 +48,13 @@ struct Entry_t {
     }
 
     bool isContainer() {
-        return type == gson::Type::Array || type == gson::Type::Object;
+        return is(gson::Type::Array) || is(gson::Type::Object);
     }
     inline bool isObject() {
-        return type == gson::Type::Object;
+        return is(gson::Type::Object);
     }
     inline bool isArray() {
-        return type == gson::Type::Array;
+        return is(gson::Type::Array);
     }
 };
 
