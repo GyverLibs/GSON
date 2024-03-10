@@ -58,7 +58,7 @@ void setup() {
     Serial.println();
 
     Serial.println("==== CHUNKS ====");
-    for (uint16_t i = 0; i < p.length(); i++) {
+    for (int i = 0; i < p.length(); i++) {
         Serial.print(i);
         Serial.print(". [");
         Serial.print(p.readType(i));
