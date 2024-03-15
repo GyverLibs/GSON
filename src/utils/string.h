@@ -99,6 +99,20 @@ class string : public Printable {
         return *this;
     }
 
+    // =============== STRING RAW ===============
+
+    // добавить строку (строка любого типа) с escape символов без запятой
+    string& addStringRawEsc(const sutil::AnyText& value) {
+        if (value.valid()) _addRaw(value, true, true);
+        return *this;
+    }
+
+    // добавить строку (строка любого типа) без запятой
+    string& addStringRaw(const sutil::AnyText& value) {
+        if (value.valid()) _addRaw(value, true, false);
+        return *this;
+    }
+
     // =============== STRING ===============
 
     // добавить строку (строка любого типа) с escape символов
@@ -179,8 +193,14 @@ class string : public Printable {
 
     // добавить bool
     string& addBool(const bool& value) {
-        s += value ? F("true") : F("false");
+        addBoolRaw(value);
         comma();
+        return *this;
+    }
+
+    // добавить bool без запятой
+    string& addBoolRaw(const bool& value) {
+        s += value ? F("true") : F("false");
         return *this;
     }
 
@@ -205,13 +225,19 @@ class string : public Printable {
 
     // добавить float
     string& addFloat(const double& value, uint8_t dec = 2) {
+        addFloatRaw(value, dec);
+        comma();
+        return *this;
+    }
+
+    // добавить float без запятой
+    string& addFloatRaw(const double& value, uint8_t dec = 2) {
         if (isnan(value)) s += '0';
         else {
             char buf[33];
             dtostrf(value, dec + 2, dec, buf);
             s += buf;
         }
-        comma();
         return *this;
     }
 
@@ -243,6 +269,12 @@ class string : public Printable {
         }
         return *this;
     }
+
+    // добавить int без запятой
+    string& addIntRaw(const sutil::AnyValue& value) {
+        if (value.valid()) value.addString(s);
+        return *this;
+    }
 #else
     // добавить int
     template <typename T>
@@ -259,6 +291,13 @@ class string : public Printable {
     string& addInt(T value) {
         s += value;
         comma();
+        return *this;
+    }
+
+    // добавить int без запятой
+    template <typename T>
+    string& addIntRaw(T value) {
+        s += value;
         return *this;
     }
 #endif

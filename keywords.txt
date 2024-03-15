@@ -51,9 +51,14 @@ addText	KEYWORD2
 addTextEsc	KEYWORD2
 addString	KEYWORD2
 addStringEsc	KEYWORD2
+addStringRaw	KEYWORD2
+addStringRawEsc	KEYWORD2
 addBool	KEYWORD2
 addFloat	KEYWORD2
 addInt	KEYWORD2
+addBoolRaw	KEYWORD2
+addFloatRaw	KEYWORD2
+addIntRaw	KEYWORD2
 beginObj	KEYWORD2
 endObj	KEYWORD2
 beginArr	KEYWORD2

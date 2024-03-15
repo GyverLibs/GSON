@@ -178,22 +178,27 @@ string& addTextEsc(AnyText str);
 // добавить строку (строка любого типа)
 string& addString(AnyText key, AnyText value);
 string& addString(AnyText value);
+string& addStringRaw(AnyText value);   // без запятой
 
 // добавить строку (строка любого типа) с escape символов
 string& addStringEsc(AnyText key, AnyText value);
 string& addStringEsc(AnyText value);
+string& addStringRawEsc(AnyText value);   // без запятой
 
 // добавить bool
 string& addBool(AnyText key, const bool& value);
 string& addBool(const bool& value);
+string& addBoolRaw(const bool& value);   // без запятой
 
 // добавить float
 string& addFloat(AnyText key, const double& value, uint8_t dec = 2);
 string& addFloat(const double& value, uint8_t dec = 2);
+string& addFloatRaw(const double& value, uint8_t dec = 2);   // без запятой
 
 // добавить int
 string& addInt(AnyText key, const AnyValue& value);
 string& addInt(const AnyValue& value);
+string& addIntRaw(const AnyValue& value);   // без запятой
 
 string& beginObj(AnyText key = "");   // начать объект
 string& endObj();   // завершить объект
@@ -363,6 +368,7 @@ Serial.println(gs.s);            // вывод в порт (или так)
 - v1.3 - оптимизация парсера, ускорение чтения значений из Parser
 - v1.4 - оптимизация парсера, ускорение чтения, изначальная строка больше не меняется парсером
 - v1.4.1 - поддержка ядра esp8266 v2.x
+- v1.4.2 - добавлены Raw методы в string
 
 <a id="install"></a>
 
