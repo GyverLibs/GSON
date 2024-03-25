@@ -11,7 +11,7 @@
 - Парсинг JSON с обработкой ошибок
 - Линейная сборка JSON-пакета
 - Экранирование "опасных" символов
-- Работает на базе AnyText ([StringUtils](https://github.com/GyverLibs/StringUtils))
+- Работает на базе Text ([StringUtils](https://github.com/GyverLibs/StringUtils))
 - Работает с 64 битными числами
 - Встроенный механизм хэширования ключей
 - *Библиотека не подходит для хранения и изменения данных! Только парсинг и сборка пакетов*
@@ -32,8 +32,8 @@
 <a id="docs"></a>
 
 ## Документация
-### `AnyText`
-Под типом `AnyText` понимается строка в любом формате:
+### `Text`
+Под типом `Text` понимается строка в любом формате:
 - `"const char"` - строки
 - `char[]` - строки
 - `F("f-строки")`
@@ -52,13 +52,13 @@ uint16_t size();                // получить размер докумен�
 void hashKeys();                // хешировать ключи всех элементов (операция необратима)
 bool hashed();                  // проверка были ли хешированы ключи
 
-Entry get(AnyText key);         // доступ по ключу (главный контейнер - Object)
+Entry get(Text key);         // доступ по ключу (главный контейнер - Object)
 Entry get(size_t hash);         // доступ по хэшу ключа (главный контейнер - Object)
 Entry get(int index);           // доступ по индексу (главный контейнер - Array или Object)
 
-AnyText key(int idx);           // прочитать ключ по индексу
+Text key(int idx);           // прочитать ключ по индексу
 size_t keyHash(int idx);        // прочитать хэш ключа по индексу
-AnyText value(int idx);         // прочитать значение по индексу
+Text value(int idx);         // прочитать значение по индексу
 int8_t parent(int idx);         // прочитать родителя по индексу
 Type type(int idx);             // получить тип по индексу
 
@@ -138,11 +138,11 @@ EmptyString
 ```
 
 ### `gson::Entry`
-Также наследует всё из `AnyText`, документация [здесь](https://github.com/GyverLibs/StringUtils?tab=readme-ov-file#anytext)
+Также наследует всё из `Text`, документация [здесь](https://github.com/GyverLibs/StringUtils?tab=readme-ov-file#anytext)
 
 ```cpp
-Entry get(AnyText key);     // получить элемент по ключу
-bool includes(AnyText key); // содержит элемент с указанным ключом
+Entry get(Text key);     // получить элемент по ключу
+bool includes(Text key); // содержит элемент с указанным ключом
 
 Entry get(size_t hash);     // получить элемент по хэшу ключа
 bool includes(size_t hash); // содержит элемент с указанным хэшем ключа
@@ -152,9 +152,9 @@ Entry get(int index);       // получить элемент по индекс
 bool valid();               // проверка корректности (существования)
 uint16_t length();          // получить размер (для объектов и массивов. Для остальных 0)
 Type type();                // получить тип элемента
-AnyText key();              // получить ключ
+Text key();              // получить ключ
 size_t keyHash();           // получить хэш ключа
-AnyText value();            // получить значение
+Text value();            // получить значение
 ```
 
 ### `gson::string`
@@ -167,43 +167,43 @@ bool reserve(uint16_t res); // зарезервировать строку
 string& add(string& str);
 
 // добавить ключ (строка любого типа)
-string& addKey(AnyText key);
+string& addKey(Text key);
 
 // прибавить текст (строка любого типа) без кавычек и запятой
-string& addText(AnyText str);
+string& addText(Text str);
 
 // прибавить текст (строка любого типа) без кавычек и запятой с escape символов
-string& addTextEsc(AnyText str);
+string& addTextEsc(Text str);
 
 // добавить строку (строка любого типа)
-string& addString(AnyText key, AnyText value);
-string& addString(AnyText value);
-string& addStringRaw(AnyText value);   // без запятой
+string& addString(Text key, Text value);
+string& addString(Text value);
+string& addStringRaw(Text value);   // без запятой
 
 // добавить строку (строка любого типа) с escape символов
-string& addStringEsc(AnyText key, AnyText value);
-string& addStringEsc(AnyText value);
-string& addStringRawEsc(AnyText value);   // без запятой
+string& addStringEsc(Text key, Text value);
+string& addStringEsc(Text value);
+string& addStringRawEsc(Text value);   // без запятой
 
 // добавить bool
-string& addBool(AnyText key, const bool& value);
+string& addBool(Text key, const bool& value);
 string& addBool(const bool& value);
 string& addBoolRaw(const bool& value);   // без запятой
 
 // добавить float
-string& addFloat(AnyText key, const double& value, uint8_t dec = 2);
+string& addFloat(Text key, const double& value, uint8_t dec = 2);
 string& addFloat(const double& value, uint8_t dec = 2);
 string& addFloatRaw(const double& value, uint8_t dec = 2);   // без запятой
 
 // добавить int
-string& addInt(AnyText key, const AnyValue& value);
-string& addInt(const AnyValue& value);
-string& addIntRaw(const AnyValue& value);   // без запятой
+string& addInt(Text key, const Value& value);
+string& addInt(const Value& value);
+string& addIntRaw(const Value& value);   // без запятой
 
-string& beginObj(AnyText key = "");   // начать объект
+string& beginObj(Text key = "");   // начать объект
 string& endObj();   // завершить объект
 
-string& beginArr(AnyText key = "");   // начать массив
+string& beginArr(Text key = "");   // начать массив
 string& endArr();   // завершить массив
 
 string& end();      // завершить пакет
@@ -259,7 +259,7 @@ for (uint16_t i = 0; i < p.length(); i++) {
 }
 ```
 
-Значения можно получать в типе `AnyText`, который может конвертироваться в другие типы и выводиться в порт:
+Значения можно получать в типе `Text`, который может конвертироваться в другие типы и выводиться в порт:
 - Ключом может быть строка в любом виде (`"строка"`, `F("строка")`)
 - Можно обращаться ко вложенным объектам по ключу, а к массивам по индексу
 
@@ -310,9 +310,9 @@ p.parse(json);
 p.hashKeys();
 ```
 
-2. Обращаться к элементам по хэшам ключей, используя функцию `sutil::SH`:
+2. Обращаться к элементам по хэшам ключей, используя функцию `su::SH`:
 ```cpp
-using sutil::SH;
+using su::SH;
 
 void foo() {
     Serial.println(p[SH("int")]);

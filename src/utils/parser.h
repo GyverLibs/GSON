@@ -45,7 +45,7 @@ class ParserCore {
     // ===================== BY KEY =====================
 
     // доступ по ключу (главный контейнер - Object)
-    gson::Entry get(const sutil::AnyText& key) {
+    gson::Entry get(const su::Text& key) {
         if (length() && entries[0].isObject()) {
             for (uint16_t i = 1; i < length(); i++) {
                 if (entries[i].parent == 0 && entries[i].key_offs && key.compare(entries[i].keyAT(str))) {
@@ -55,7 +55,7 @@ class ParserCore {
         }
         return gson::Entry(nullptr, 0, str);
     }
-    gson::Entry operator[](const sutil::AnyText& key) {
+    gson::Entry operator[](const su::Text& key) {
         return get(key);
     }
 
@@ -99,7 +99,7 @@ class ParserCore {
     // ===================== MISC =====================
 
     // прочитать ключ по индексу
-    sutil::AnyText key(int idx) {
+    su::Text key(int idx) {
         return (length() && (uint16_t)idx < length()) ? entries[idx].keyAT(str) : "";
     }
 
@@ -113,7 +113,7 @@ class ParserCore {
     }
 
     // прочитать значение по индексу
-    sutil::AnyText value(int idx) {
+    su::Text value(int idx) {
         return (length() && (uint16_t)idx < length()) ? entries[idx].valueAT(str) : "";
     }
 
@@ -177,12 +177,12 @@ class ParserCore {
     }
 
     // вывести в Print с форматированием
-    void stringify(Print* p) {
+    void stringify(Print* pr) {
         if (!length()) return;
         gson::parent_t idx = 0;
         uint8_t dep = 0;
-        _stringify(*p, idx, GSON_MAX_INDEX, dep);
-        p->println();
+        _stringify(*pr, idx, GSON_MAX_INDEX, dep);
+        pr->println();
     }
 
     // ============ ERROR ============
@@ -259,59 +259,59 @@ class ParserCore {
     gsutil::Entry_t buf;
     uint8_t depth = 0;
 
-    void printT(Print& p, int16_t amount) {
+    void printT(Print& pr, int16_t amount) {
         while (amount--) {
-            p.print(' ');
-            p.print(' ');
+            pr.print(' ');
+            pr.print(' ');
         }
     }
 
-    void _stringify(Print& p, gson::parent_t& idx, gson::parent_t parent, uint8_t& dep) {
+    void _stringify(Print& pr, gson::parent_t& idx, gson::parent_t parent, uint8_t& dep) {
         bool first = true;
         while (idx < length()) {
             gsutil::Entry_t ent = entries[idx];
             if (ent.parent != parent) return;
             if (first) first = false;
-            else p.print(",\n");
+            else pr.print(",\n");
 
             if (ent.isContainer()) {
-                printT(p, dep);
+                printT(pr, dep);
                 if (ent.key_offs) {
-                    p.print('\"');
-                    p.print(ent.keyAT(str));
-                    p.print("\": ");
+                    pr.print('\"');
+                    pr.print(ent.keyAT(str));
+                    pr.print("\": ");
                 }
-                p.print((ent.isArray()) ? '[' : '{');
-                p.print('\n');
+                pr.print((ent.isArray()) ? '[' : '{');
+                pr.print('\n');
                 int16_t par = idx;
                 idx++;
                 dep++;
-                _stringify(p, idx, par, dep);
+                _stringify(pr, idx, par, dep);
                 dep--;
-                p.print('\n');
-                printT(p, dep);
-                p.print((ent.isArray()) ? ']' : '}');
+                pr.print('\n');
+                printT(pr, dep);
+                pr.print((ent.isArray()) ? ']' : '}');
             } else {
-                printT(p, dep);
+                printT(pr, dep);
                 if (ent.key_offs) {
-                    p.print('\"');
-                    p.print(ent.keyAT(str));
-                    p.print("\":");
+                    pr.print('\"');
+                    pr.print(ent.keyAT(str));
+                    pr.print("\":");
                 }
-                if (ent.is(gson::Type::String)) p.print('\"');
+                if (ent.is(gson::Type::String)) pr.print('\"');
                 switch ((gson::Type)ent.type) {
                     case gson::Type::String:
                     case gson::Type::Int:
                     case gson::Type::Float:
-                        p.print(ent.valueAT(str));
+                        pr.print(ent.valueAT(str));
                         break;
                     case gson::Type::Bool:
-                        p.print((*(ent.value(str)) == 't') ? F("true") : F("false"));
+                        pr.print((*(ent.value(str)) == 't') ? F("true") : F("false"));
                         break;
                     default:
                         break;
                 }
-                if (ent.is(gson::Type::String)) p.print('\"');
+                if (ent.is(gson::Type::String)) pr.print('\"');
                 idx++;
             }
         }

@@ -278,7 +278,7 @@ GSON is natively supported by Stringutils hash strokes, work with hashi signific
 doc.hashkeys ();
 `` `
 
-2. Turn to the elements according to the Hesh keys using the function `sutil :: Sh`:
+2. Turn to the elements according to the Hesh keys using the function `su :: Sh`:
 `` `CPP
 USing Sutil :: SH;
 

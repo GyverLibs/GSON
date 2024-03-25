@@ -7,7 +7,7 @@
 
 namespace gson {
 
-class Entry : public sutil::AnyText {
+class Entry : public su::Text {
    public:
     Entry(const gsutil::Entries<>* ens, parent_t idx, const char* str) : ens(ens), idx(idx), str(str) {
         if (valid()) {
@@ -19,7 +19,7 @@ class Entry : public sutil::AnyText {
     // ===================== BY KEY =====================
 
     // получить элемент по ключу
-    Entry get(const sutil::AnyText& key) const {
+    Entry get(const su::Text& key) const {
         if (valid() && ens->get(idx).isObject()) {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
                 if (ens->get(i).parent == idx &&
@@ -31,7 +31,7 @@ class Entry : public sutil::AnyText {
     }
 
     // содержит элемент с указанным ключом
-    bool includes(const sutil::AnyText& key) const {
+    bool includes(const su::Text& key) const {
         return get(key).valid();
     }
 
@@ -101,7 +101,7 @@ class Entry : public sutil::AnyText {
     }
 
     // получить ключ
-    sutil::AnyText key() const {
+    su::Text key() const {
         return (valid()) ? ens->get(idx).keyAT(str) : "";
     }
 
@@ -115,7 +115,7 @@ class Entry : public sutil::AnyText {
     }
 
     // получить значение
-    sutil::AnyText value() const {
+    su::Text value() const {
         return *this;
     }
 

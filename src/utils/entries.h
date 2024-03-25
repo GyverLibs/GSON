@@ -40,11 +40,11 @@ struct Entry_t {
         return str + val_offs;
     }
 
-    inline sutil::AnyText keyAT(const char* str) {
-        return sutil::AnyText(key(str), key_len);
+    inline su::Text keyAT(const char* str) {
+        return su::Text(key(str), key_len);
     }
-    inline sutil::AnyText valueAT(const char* str) {
-        return sutil::AnyText(value(str), val_len);
+    inline su::Text valueAT(const char* str) {
+        return su::Text(value(str), val_len);
     }
 
     bool isContainer() {

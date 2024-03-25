@@ -20,7 +20,7 @@ class string : public Printable {
     }
 
     // доступ к строке
-    operator sutil::AnyText() {
+    operator su::Text() {
         return s;
     }
 
@@ -72,7 +72,7 @@ class string : public Printable {
     // =============== KEY ===============
 
     // добавить ключ (строка любого типа)
-    string& addKey(const sutil::AnyText& key) {
+    string& addKey(const su::Text& key) {
         if (key.valid()) {
             _addRaw(key, true, false);
             colon();
@@ -81,20 +81,20 @@ class string : public Printable {
     }
 
     // добавить ключ (строка любого типа)
-    string& operator[](const sutil::AnyText& key) {
+    string& operator[](const su::Text& key) {
         return addKey(key);
     }
 
     // =============== TEXT ===============
 
     // прибавить текст (строка любого типа) без запятой и кавычек
-    string& addText(const sutil::AnyText& str) {
+    string& addText(const su::Text& str) {
         if (str.valid()) _addRaw(str, false, false);
         return *this;
     }
 
     // прибавить текст (строка любого типа) без запятой и кавычек с escape символов
-    string& addTextEsc(const sutil::AnyText& str) {
+    string& addTextEsc(const su::Text& str) {
         if (str.valid()) _addRaw(str, false, true);
         return *this;
     }
@@ -102,13 +102,13 @@ class string : public Printable {
     // =============== STRING RAW ===============
 
     // добавить строку (строка любого типа) с escape символов без запятой
-    string& addStringRawEsc(const sutil::AnyText& value) {
+    string& addStringRawEsc(const su::Text& value) {
         if (value.valid()) _addRaw(value, true, true);
         return *this;
     }
 
     // добавить строку (строка любого типа) без запятой
-    string& addStringRaw(const sutil::AnyText& value) {
+    string& addStringRaw(const su::Text& value) {
         if (value.valid()) _addRaw(value, true, false);
         return *this;
     }
@@ -116,7 +116,7 @@ class string : public Printable {
     // =============== STRING ===============
 
     // добавить строку (строка любого типа) с escape символов
-    string& addStringEsc(const sutil::AnyText& key, const sutil::AnyText& value) {
+    string& addStringEsc(const su::Text& key, const su::Text& value) {
         if (key.valid() && value.valid()) {
             addKey(key);
             addStringEsc(value);
@@ -125,7 +125,7 @@ class string : public Printable {
     }
 
     // добавить строку (строка любого типа) с escape символов
-    string& addStringEsc(const sutil::AnyText& value) {
+    string& addStringEsc(const su::Text& value) {
         if (value.valid()) {
             _addRaw(value, true, true);
             comma();
@@ -134,7 +134,7 @@ class string : public Printable {
     }
 
     // добавить строку (строка любого типа)
-    string& addString(const sutil::AnyText& key, const sutil::AnyText& value) {
+    string& addString(const su::Text& key, const su::Text& value) {
         if (key.valid() && value.valid()) {
             addKey(key);
             addString(value);
@@ -143,7 +143,7 @@ class string : public Printable {
     }
 
     // добавить строку (строка любого типа)
-    string& addString(const sutil::AnyText& value) {
+    string& addString(const su::Text& value) {
         if (value.valid()) {
             _addRaw(value, true, false);
             comma();
@@ -183,7 +183,7 @@ class string : public Printable {
     // =============== BOOL ===============
 
     // добавить bool
-    string& addBool(const sutil::AnyText& key, const bool& value) {
+    string& addBool(const su::Text& key, const bool& value) {
         if (key.valid()) {
             addKey(key);
             addBool(value);
@@ -215,7 +215,7 @@ class string : public Printable {
     // =============== FLOAT ===============
 
     // добавить float
-    string& addFloat(const sutil::AnyText& key, const double& value, uint8_t dec = 2) {
+    string& addFloat(const su::Text& key, const double& value, uint8_t dec = 2) {
         if (key.valid()) {
             addKey(key);
             addFloat(value, dec);
@@ -253,7 +253,7 @@ class string : public Printable {
 
 #ifndef SUTIL_NO_VALUE
     // добавить int
-    string& addInt(const sutil::AnyText& key, const sutil::AnyValue& value) {
+    string& addInt(const su::Text& key, const su::Value& value) {
         if (key.valid() && value.valid()) {
             addKey(key);
             addInt(value);
@@ -262,7 +262,7 @@ class string : public Printable {
     }
 
     // добавить int
-    string& addInt(const sutil::AnyValue& value) {
+    string& addInt(const su::Value& value) {
         if (value.valid()) {
             value.addString(s);
             comma();
@@ -271,14 +271,14 @@ class string : public Printable {
     }
 
     // добавить int без запятой
-    string& addIntRaw(const sutil::AnyValue& value) {
+    string& addIntRaw(const su::Value& value) {
         if (value.valid()) value.addString(s);
         return *this;
     }
 #else
     // добавить int
     template <typename T>
-    string& addInt(const sutil::AnyText& key, T value) {
+    string& addInt(const su::Text& key, T value) {
         if (key.valid()) {
             addKey(key);
             addInt(value);
@@ -376,7 +376,7 @@ class string : public Printable {
     // =============== CONTAINER ===============
 
     // начать объект
-    string& beginObj(const sutil::AnyText& key = sutil::AnyText()) {
+    string& beginObj(const su::Text& key = su::Text()) {
         addKey(key);
         s += '{';
         return *this;
@@ -390,7 +390,7 @@ class string : public Printable {
     }
 
     // начать массив
-    string& beginArr(const sutil::AnyText& key = sutil::AnyText()) {
+    string& beginArr(const su::Text& key = su::Text()) {
         addKey(key);
         s += '[';
         return *this;
@@ -425,7 +425,7 @@ class string : public Printable {
     virtual void afterValue() {}
 
     // escape символов
-    virtual void escape(const sutil::AnyText& text) {
+    virtual void escape(const su::Text& text) {
         uint16_t len = text.length();
         char p = 0;
         for (uint16_t i = 0; i < len; i++) {
@@ -457,7 +457,7 @@ class string : public Printable {
     }
 
    private:
-    void _addRaw(const sutil::AnyText& text, bool quot, bool esc) {
+    void _addRaw(const su::Text& text, bool quot, bool esc) {
         if (quot) quotes();
         if (esc) {
             if (!s.reserve(s.length() + text.length())) return;

@@ -53,8 +53,8 @@ void setup() {
 
     p.hashKeys();
     Serial.println("==== HASH ACCESS ====");
-    Serial.println(p[sutil::SH("str2")]);
-    Serial.println(p[sutil::SH("obj")][sutil::SH("float")]);
+    Serial.println(p[su::SH("str2")]);
+    Serial.println(p[su::SH("obj")][su::SH("float")]);
     Serial.println();
 
     Serial.println("==== CHUNKS ====");
