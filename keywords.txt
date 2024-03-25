@@ -42,6 +42,7 @@ getError	KEYWORD2
 errorIndex	KEYWORD2
 readError	KEYWORD2
 
+setMaxDepth	KEYWORD2
 clear	KEYWORD2
 reserve	KEYWORD2
 end	KEYWORD2

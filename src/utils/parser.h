@@ -32,6 +32,11 @@ class ParserCore {
         return length() * sizeof(gsutil::Entry_t);
     }
 
+    // установить максимальную глубину вложенности парсинга (умолч. 16)
+    void setMaxDepth(uint8_t maxdepth) {
+        depth = maxdepth;
+    }
+
     // хешировать ключи всех элементов (операция необратима)
     void hashKeys() {
         if (str) entries.hashKeys(str);
@@ -148,32 +153,15 @@ class ParserCore {
     }
 
     // ============ PARSE ============
-    // парсить. Вернёт true при успешном парсинге. Можно указать макс. уровень вложенности
-    bool parse(String& json, uint8_t maxdepth = 16) {
-        return parse(json.c_str(), maxdepth);
+    // парсить. Вернёт true при успешном парсинге
+    bool parse(const String& json) {
+        return _startParse(json);
     }
-
-    // парсить. Вернёт true при успешном парсинге. Можно указать макс. уровень вложенности
-    bool parse(const char* json, uint8_t maxdepth = 16) {
-        if (!json || !json[0]) {
-            error = gson::Error::EmptyString;
-            return 0;
-        }
-        str = json;
-        p = (char*)json;
-        state = State::Idle;
-        readStr = 0;
-        buf = gsutil::Entry_t();
-        entries.clear();
-        depth = maxdepth;
-
-        if (p[0] == '{' || p[0] == '[') {
-            error = _parse(0);
-            entries[0].parent = GSON_MAX_INDEX;
-        } else {
-            error = gson::Error::NotContainer;
-        }
-        return !hasError();
+    bool parse(const char* json) {
+        return _startParse(json);
+    }
+    bool parse(const char* json, uint16_t len) {
+        return _startParse(su::Text(json, len));
     }
 
     // вывести в Print с форматированием
@@ -198,7 +186,7 @@ class ParserCore {
 
     // индекс места ошибки в строке
     uint16_t errorIndex() {
-        return str ? (p - str) : 0;
+        return (str && p) ? (p - str) : 0;
     }
 
     // прочитать ошибку
@@ -257,7 +245,8 @@ class ParserCore {
     State state = State::Idle;
     bool readStr = 0;
     gsutil::Entry_t buf;
-    uint8_t depth = 0;
+    uint8_t depth = 16;
+    const char* end = 0;
 
     void printT(Print& pr, int16_t amount) {
         while (amount--) {
@@ -317,8 +306,35 @@ class ParserCore {
         }
     }
 
+    bool _startParse(const su::Text& json) {
+        if (!json.length()) {
+            error = gson::Error::EmptyString;
+            return 0;
+        }
+        if (json.length() >= (uint32_t)GSON_MAX_LEN) {
+            error = gson::Error::LongPacket;
+            return 0;
+        }
+
+        str = json.str();
+        end = str + json.length();
+        p = (char*)str;
+        state = State::Idle;
+        readStr = 0;
+        buf = gsutil::Entry_t();
+        entries.clear();
+
+        if (p[0] == '{' || p[0] == '[') {
+            error = _parse(0);
+            entries[0].parent = GSON_MAX_INDEX;
+        } else {
+            error = gson::Error::NotContainer;
+        }
+        return !hasError();
+    }
+
     gson::Error _parse(gson::parent_t parent) {
-        while (*p) {
+        while (p && p < end && *p) {
             switch (*p) {
                 case ' ':
                 case '\n':
@@ -493,8 +509,7 @@ class ParserCore {
                 state = State::Idle;
             }
 
-            p++;
-            if (p - str >= (int32_t)GSON_MAX_LEN) return gson::Error::LongPacket;
+            if (p) p++;
         }  // while
 
         return (parent == 0) ? gson::Error::None : gson::Error::BrokenContainer;
