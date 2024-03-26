@@ -371,12 +371,12 @@ class ParserCore {
                                 case State::WaitKey:
                                 case State::Idle:
                                     p++;
-                                    if (*p == '\"') return gson::Error::EmptyKey;
+                                    if (*p == '\"' || p >= end) return gson::Error::EmptyKey;
                                     buf.key_offs = p - str;
                                     while (1) {
-                                        p = strchr(p + 1, '\"');
-                                        if (p[-1] != '\\') break;
+                                        p = (char*)memchr((void*)(p + 1), '\"', end - p - 1);
                                         if (!p) return gson::Error::BrokenString;
+                                        if (p[-1] != '\\') break;
                                     }
                                     if (p - buf.key(str) > GSON_MAX_KEY_LEN) return gson::Error::LongKey;
                                     buf.key_len = p - buf.key(str);
@@ -413,6 +413,7 @@ class ParserCore {
                     buf.reset();
                     state = State::Idle;
                     p++;
+                    if (p >= end) return gson::Error::BrokenContainer;
                     if (depth - 1 == 0) return gson::Error::TooDeep;
 
                     depth--;
@@ -453,7 +454,7 @@ class ParserCore {
                             if (buf.is(gson::Type::Int)) buf.type = gson::Type::Float;
                             else return gson::Error::UnknownToken;
                         }
-                        if (!p[1]) return gson::Error::BrokenToken;
+                        if (p + 1 >= end || !p[1]) return gson::Error::BrokenToken;
 
                         bool end = 0;
                         switch (p[1]) {  // next sym
@@ -490,14 +491,15 @@ class ParserCore {
             if (readStr) {
                 readStr = 0;
                 p++;
+                if (p >= end) return gson::Error::BrokenString;
                 if (*p == '\"') {
                     buf.val_offs = 0;
                 } else {
                     buf.val_offs = p - str;
                     while (1) {
-                        p = strchr(p + 1, '\"');
-                        if (p[-1] != '\\') break;
+                        p = (char*)memchr((void*)(p + 1), '\"', end - p - 1);
                         if (!p) return gson::Error::BrokenString;
+                        if (p[-1] != '\\') break;
                     }
                 }
                 if (length() == GSON_MAX_INDEX - 1) return gson::Error::IndexOverflow;
