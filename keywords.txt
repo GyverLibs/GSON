@@ -67,6 +67,7 @@ endArr	KEYWORD2
 quotes	KEYWORD2
 comma	KEYWORD2
 colon	KEYWORD2
+escapeDefault	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)

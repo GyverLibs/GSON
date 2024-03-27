@@ -166,6 +166,9 @@ String s;                   // доступ к строке
 void clear();               // очистить строку
 bool reserve(uint16_t res); // зарезервировать строку
 
+// делать escape символов при прибавлении через оператор = (умолч. вкл, true)
+void escapeDefault(bool esc);
+
 // прибавить gson::string. Будет добавлена запятая
 string& add(string& str);
 

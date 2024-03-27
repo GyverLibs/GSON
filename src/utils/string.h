@@ -153,31 +153,31 @@ class string : public Printable {
 
     // добавить строку (строка любого типа)
     void operator=(const char* value) {
-        addStringEsc(value);
+        _addString(value);
     }
     void operator+=(const char* value) {
-        addStringEsc(value);
+        _addString(value);
     }
 
     void operator=(const __FlashStringHelper* value) {
-        addStringEsc(value);
+        _addString(value);
     }
     void operator+=(const __FlashStringHelper* value) {
-        addStringEsc(value);
+        _addString(value);
     }
 
     void operator=(const String& value) {
-        addStringEsc(value);
+        _addString(value);
     }
     void operator+=(const String& value) {
-        addStringEsc(value);
+        _addString(value);
     }
 
     void operator=(const su::Text& value) {
-        addStringEsc(value);
+        _addString(value);
     }
     void operator+=(const su::Text& value) {
-        addStringEsc(value);
+        _addString(value);
     }
 
     // =============== BOOL ===============
@@ -426,6 +426,11 @@ class string : public Printable {
         s += ':';
     }
 
+    // делать escape символов при прибавлении через оператор = (умолч. вкл, true)
+    void escapeDefault(bool esc) {
+        _esc = esc;
+    }
+
     // =============== PRIVATE ===============
    protected:
     // вызывается перед запятой (после добавления значения)
@@ -464,6 +469,8 @@ class string : public Printable {
     }
 
    private:
+    bool _esc = true;
+
     void _addRaw(const su::Text& text, bool quot, bool esc) {
         if (quot) quotes();
         if (esc) {
@@ -482,6 +489,10 @@ class string : public Printable {
         } else {
             if (sym) s += sym;
         }
+    }
+    void _addString(const su::Text& text) {
+        _addRaw(text, true, _esc);
+        comma();
     }
 };
 
