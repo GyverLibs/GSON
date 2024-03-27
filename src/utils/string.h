@@ -173,10 +173,10 @@ class string : public Printable {
         addStringEsc(value);
     }
 
-    void operator=(String& value) {
+    void operator=(const su::Text& value) {
         addStringEsc(value);
     }
-    void operator+=(String& value) {
+    void operator+=(const su::Text& value) {
         addStringEsc(value);
     }
 
@@ -301,6 +301,13 @@ class string : public Printable {
         return *this;
     }
 #endif
+
+    void operator=(const su::Value& value) {
+        addInt(value);
+    }
+    void operator+=(const su::Value& value) {
+        addInt(value);
+    }
 
     void operator=(const char& value) {
         addInt(value);
