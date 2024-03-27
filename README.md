@@ -68,8 +68,7 @@ Type type(int idx);             // получить тип по индексу
 const __FlashStringHelper* readType(uint16_t idx);  // прочитать тип по индексу
 
 // парсить. Вернёт true при успешном парсинге
-bool parse(const String& json);
-bool parse(const char* json);
+bool parse(const Text& json);
 bool parse(const char* json, uint16_t len);
 
 // вывести в Print с форматированием

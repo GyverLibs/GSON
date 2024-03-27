@@ -154,10 +154,8 @@ class ParserCore {
 
     // ============ PARSE ============
     // парсить. Вернёт true при успешном парсинге
-    bool parse(const String& json) {
-        return _startParse(json);
-    }
-    bool parse(const char* json) {
+    bool parse(const su::Text& json) {
+        if (json.pgm()) return 0;
         return _startParse(json);
     }
     bool parse(const char* json, uint16_t len) {
