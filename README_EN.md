@@ -56,7 +56,7 @@ Bool Parse (String & Json, Uint8_t Maxdepth = 16);
 Bool Parse (Const Char* Json, Uint8_t Maxdepth = 16);
 
 // Bring out to Print with formatting
-VOID stringify (print* p);
+VOID stringify (print& p);
 
 // error processing
 Bool Haserror ();// there is a parsing error

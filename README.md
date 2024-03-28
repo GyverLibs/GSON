@@ -72,7 +72,7 @@ bool parse(const Text& json);
 bool parse(const char* json, uint16_t len);
 
 // вывести в Print с форматированием
-void stringify(Print* p);
+void stringify(Print& p);
 
 // обработка ошибок
 bool hasError();                        // есть ошибка парсинга
@@ -158,6 +158,8 @@ Type type();                // получить тип элемента
 Text key();                 // получить ключ
 size_t keyHash();           // получить хэш ключа
 Text value();               // получить значение
+
+void stringify(Print& p);   // вывести в Print с форматированием
 ```
 
 ### `gson::string`
@@ -376,6 +378,7 @@ Serial.println(gs.s);            // вывод в порт (или так)
 - v1.4.1 - поддержка ядра esp8266 v2.x
 - v1.4.2 - добавлены Raw методы в string
 - v1.4.3 - обновление до актуальной StringUtils, парсинг из su::Text
+- v1.4.6 - добавил stringify для Entry
 
 <a id="install"></a>
 

@@ -40,10 +40,10 @@ struct Entry_t {
         return str + val_offs;
     }
 
-    inline su::Text keyAT(const char* str) {
+    inline su::Text keyText(const char* str) {
         return su::Text(key(str), key_len);
     }
-    inline su::Text valueAT(const char* str) {
+    inline su::Text valueText(const char* str) {
         return su::Text(value(str), val_len);
     }
 
@@ -123,7 +123,7 @@ class Entries {
     void hashKeys(const char* str) {
 #ifndef GSON_NO_HASH
         for (uint16_t i = 0; i < _len; i++) {
-            _eptr[i].key_hash = _eptr[i].keyAT(str).hash();
+            _eptr[i].key_hash = _eptr[i].keyText(str).hash();
         }
         _hashed = 1;
 #endif

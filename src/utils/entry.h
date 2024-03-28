@@ -24,7 +24,7 @@ class Entry : public su::Text {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
                 if (ens->get(i).parent == idx &&
                     ens->get(i).key_offs &&
-                    key.compare(ens->get(i).keyAT(str))) return Entry(ens, i, str);
+                    key.compare(ens->get(i).keyText(str))) return Entry(ens, i, str);
             }
         }
         return Entry(nullptr, 0, str);
@@ -102,13 +102,13 @@ class Entry : public su::Text {
 
     // получить ключ
     su::Text key() const {
-        return (valid()) ? ens->get(idx).keyAT(str) : "";
+        return (valid()) ? ens->get(idx).keyText(str) : "";
     }
 
     // получить хэш ключа
     size_t keyHash() const {
 #ifndef GSON_NO_HASH
-        return valid() ? (ens->hashed() ? ens->get(idx).key_hash : ens->get(idx).keyAT(str).hash()) : 0;
+        return valid() ? (ens->hashed() ? ens->get(idx).key_hash : ens->get(idx).keyText(str).hash()) : 0;
 #else
         return 0;
 #endif
@@ -134,10 +134,86 @@ class Entry : public su::Text {
         return valid() ? ens->get(idx).type : gson::Type::None;
     }
 
+    // вывести в Print с форматированием
+    void stringify(Print& p, uint8_t tab = 0) {
+        if (!valid()) return;
+        if (ens->get(idx).isContainer()) {
+            uint8_t dep = tab;
+            parent_t index = idx + 1;
+            _stringify(p, index, ens->get(index).parent, dep);
+        } else {
+            _print(p, ens->get(idx));
+        }
+        p.println();
+    }
+
    private:
     const gsutil::Entries<>* ens;
     const parent_t idx;
     const char* str;
+
+    void _printTab(Print& p, uint8_t amount) {
+        while (amount--) {
+            p.print(' ');
+            p.print(' ');
+        }
+    }
+
+    void _print(Print& p, gsutil::Entry_t& ent) {
+        if (ent.key_offs) {
+            p.print('\"');
+            p.print(ent.keyText(str));
+            p.print("\":");
+        }
+        if (ent.is(gson::Type::String)) p.print('\"');
+        switch ((gson::Type)ent.type) {
+            case gson::Type::String:
+            case gson::Type::Int:
+            case gson::Type::Float:
+                p.print(ent.valueText(str));
+                break;
+            case gson::Type::Bool:
+                p.print((*(ent.value(str)) == 't') ? F("true") : F("false"));
+                break;
+            default:
+                break;
+        }
+        if (ent.is(gson::Type::String)) p.print('\"');
+    }
+
+    void _stringify(Print& p, parent_t& index, parent_t parent, uint8_t& dep) {
+        bool first = true;
+        while (index < ens->length()) {
+            gsutil::Entry_t ent = ens->get(index);
+            if (ent.parent != parent) return;
+
+            if (first) first = false;
+            else p.print(",\n");
+
+            if (ent.isContainer()) {
+                _printTab(p, dep);
+                if (ent.key_offs) {
+                    p.print('\"');
+                    p.print(ent.keyText(str));
+                    p.print("\": ");
+                }
+                p.print((ent.isArray()) ? '[' : '{');
+                p.print('\n');
+                parent_t prev = index;
+                index++;
+                dep++;
+                _stringify(p, index, prev, dep);
+                dep--;
+                p.print('\n');
+                _printTab(p, dep);
+                p.print((ent.isArray()) ? ']' : '}');
+            } else {
+                _printTab(p, dep);
+                _print(p, ent);
+                index++;
+            }
+        }
+    }
 };
 
 }  // namespace gson

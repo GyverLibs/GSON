@@ -73,7 +73,20 @@ void setup() {
     Serial.println();
 
     Serial.println("==== STRINGIFY ====");
-    p.stringify(&Serial);
+    p.stringify(Serial);
+    Serial.println();
+
+    Serial.println("==== STRINGIFY ====");
+    p[su::SH("obj2")].stringify(Serial);
+    Serial.println();
+
+    Serial.println("==== STRINGIFY ====");
+    p[su::SH("obj")][su::SH("float2")].stringify(Serial);
+    Serial.println();
+
+    Serial.println("==== STRINGIFY ====");
+    p[su::SH("int")].stringify(Serial);
+    Serial.println();
 }
 
 void loop() {
