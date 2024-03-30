@@ -164,12 +164,7 @@ class ParserCore {
 
     // вывести в Print с форматированием
     void stringify(Print& pr) {
-        if (!length()) return;
-        pr.print(entries[0].isObject() ? '{' : '[');
-        pr.println();
-        gson::Entry(&entries, 0, str).stringify(pr, 1);
-        pr.print(entries[0].isObject() ? '}' : ']');
-        pr.println();
+        if (length()) gson::Entry(&entries, 0, str).stringify(pr);
     }
 
     // ============ ERROR ============

@@ -135,16 +135,19 @@ class Entry : public su::Text {
     }
 
     // вывести в Print с форматированием
-    void stringify(Print& p, uint8_t tab = 0) {
+    void stringify(Print& pr) {
         if (!valid()) return;
         if (ens->get(idx).isContainer()) {
-            uint8_t dep = tab;
+            uint8_t dep = 1;
             parent_t index = idx + 1;
-            _stringify(p, index, ens->get(index).parent, dep);
+            pr.println(ens->get(idx).isObject() ? '{' : '[');
+            _stringify(pr, index, ens->get(index).parent, dep);
+            pr.println();
+            pr.print(ens->get(idx).isObject() ? '}' : ']');
         } else {
-            _print(p, ens->get(idx));
+            _print(pr, ens->get(idx));
         }
-        p.println();
+        pr.println();
     }
 
    private:
