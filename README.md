@@ -43,7 +43,7 @@
 ```cpp
 // конструктор
 gson::Parser();
-gson::Parser(размер);
+gson::Parser(reserve); // зарезервировать на кол-во объектов для ускорения парсинга 
 gson::ParserStatic<размер>();
 
 // методы
