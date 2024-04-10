@@ -183,11 +183,16 @@ string& add(string& str);
 // добавить ключ (строка любого типа)
 string& addKey(Text key);
 
-// прибавить текст (строка любого типа) без кавычек и запятой
-string& addText(Text str);
 
-// прибавить текст (строка любого типа) без кавычек и запятой с escape символов
-string& addTextEsc(Text str);
+// прибавить текст (строка любого типа) без кавычек
+string& addText(Text key, Text txt);
+string& addText(Text txt);
+string& addTextRaw(Text txt); // без запятой
+
+// прибавить текст (строка любого типа) без кавычек с escape символов
+string& addTextEsc(Text key, Text txt);
+string& addTextEsc(Text txt);
+string& addTextRawEsc(Text txt); // без запятой
 
 // добавить строку (строка любого типа)
 string& addString(Text key, Text value);
@@ -385,6 +390,7 @@ Serial.println(gs.s);            // вывод в порт (или так)
 - v1.4.2 - добавлены Raw методы в string
 - v1.4.3 - обновление до актуальной StringUtils, парсинг из su::Text
 - v1.4.6 - добавил stringify для Entry
+- v1.4.9 - добавлено больше функций addText в gson::string
 
 <a id="install"></a>
 

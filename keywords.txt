@@ -20,8 +20,7 @@ GSON_MAX_SPEED	KEYWORD1
 # Methods and Functions (KEYWORD2)
 #######################################
 
-gson	KEYWORD2
-
+# parser
 get	KEYWORD2
 valid	KEYWORD2
 key	KEYWORD2
@@ -41,13 +40,18 @@ hasError	KEYWORD2
 getError	KEYWORD2
 errorIndex	KEYWORD2
 readError	KEYWORD2
-
 setMaxDepth	KEYWORD2
+
+# string
 clear	KEYWORD2
 reserve	KEYWORD2
 end	KEYWORD2
 add	KEYWORD2
 addKey	KEYWORD2
+addText	KEYWORD2
+addTextRaw	KEYWORD2
+addTextEsc	KEYWORD2
+addTextRawEsc	KEYWORD2
 addText	KEYWORD2
 addTextEsc	KEYWORD2
 addString	KEYWORD2

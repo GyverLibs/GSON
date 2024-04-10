@@ -88,14 +88,50 @@ class string : public Printable {
     // =============== TEXT ===============
 
     // прибавить текст (строка любого типа) без запятой и кавычек
-    string& addText(const su::Text& str) {
-        if (str.valid()) _addRaw(str, false, false);
+    string& addTextRaw(const su::Text& txt) {
+        if (txt.valid()) _addRaw(txt, false, false);
         return *this;
     }
 
     // прибавить текст (строка любого типа) без запятой и кавычек с escape символов
-    string& addTextEsc(const su::Text& str) {
-        if (str.valid()) _addRaw(str, false, true);
+    string& addTextRawEsc(const su::Text& txt) {
+        if (txt.valid()) _addRaw(txt, false, true);
+        return *this;
+    }
+
+    // прибавить текст (строка любого типа) без кавычек
+    string& addText(const su::Text& txt) {
+        if (txt.valid()) {
+            addTextRaw(txt);
+            comma();
+        }
+        return *this;
+    }
+
+    // прибавить текст (строка любого типа) без кавычек с escape символов
+    string& addTextEsc(const su::Text& txt) {
+        if (txt.valid()) {
+            addTextRawEsc(txt);
+            comma();
+        }
+        return *this;
+    }
+
+    // добавить текст (строка любого типа) без кавычек
+    string& addText(const su::Text& key, const su::Text& txt) {
+        if (key.valid() && txt.valid()) {
+            addKey(key);
+            addText(txt);
+        }
+        return *this;
+    }
+
+    // добавить текст (строка любого типа) без кавычек с escape символов
+    string& addTextEsc(const su::Text& key, const su::Text& txt) {
+        if (key.valid() && txt.valid()) {
+            addKey(key);
+            addTextEsc(txt);
+        }
         return *this;
     }
 
