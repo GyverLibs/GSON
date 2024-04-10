@@ -64,11 +64,6 @@ class string : public Printable {
         add(str);
     }
 
-    // прибавить gson::string. Будет добавлена запятая
-    void operator=(const string& str) {
-        add(str);
-    }
-
     // =============== KEY ===============
 
     // добавить ключ (строка любого типа)
