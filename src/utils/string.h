@@ -35,7 +35,7 @@ class string : public Printable {
     }
 
     // длина строки
-    uint16_t length() {
+    uint16_t length() const {
         return s.length();
     }
 
