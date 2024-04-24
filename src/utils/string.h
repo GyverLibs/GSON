@@ -55,7 +55,7 @@ class string : public Printable {
     // прибавить gson::string. Будет добавлена запятая
     string& add(const string& str) {
         s += str.s;
-        comma();
+        _replaceComma(',');
         return *this;
     }
 
