@@ -42,6 +42,9 @@ errorIndex	KEYWORD2
 readError	KEYWORD2
 setMaxDepth	KEYWORD2
 
+# entry
+isContainer	KEYWORD2
+
 # string
 clear	KEYWORD2
 reserve	KEYWORD2

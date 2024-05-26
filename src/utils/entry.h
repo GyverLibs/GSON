@@ -138,6 +138,11 @@ class Entry : public su::Text {
         return valid() ? ens->get(idx).type : gson::Type::None;
     }
 
+    // элемент Array или Object
+    bool isContainer() {
+        return valid() ? ens->get(idx).isContainer() : false;
+    }
+
     // вывести в Print с форматированием
     void stringify(Print& pr) {
         if (!valid()) return;
