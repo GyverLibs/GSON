@@ -96,9 +96,13 @@ class Entry : public su::Text {
     // ===================== MISC =====================
 
     // проверка корректности (существования)
-    bool valid() const {
+    inline bool valid() const {
         return ens && str;
     }
+
+    explicit inline operator bool() const {
+        return valid();
+    };
 
     // получить ключ
     su::Text key() const {
