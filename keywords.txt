@@ -45,6 +45,8 @@ setMaxDepth	KEYWORD2
 
 # entry
 isContainer	KEYWORD2
+isObject	KEYWORD2
+isArray	KEYWORD2
 
 # string
 clear	KEYWORD2

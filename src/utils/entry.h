@@ -101,7 +101,7 @@ class Entry : public su::Text {
         return ens && str;
     }
 
-    explicit inline operator bool() const {
+    inline operator bool() const {
         return valid();
     };
 
@@ -142,6 +142,16 @@ class Entry : public su::Text {
     // элемент Array или Object
     bool isContainer() {
         return valid() ? ens->get(idx).isContainer() : false;
+    }
+
+    // элемент Object
+    bool isObject() {
+        return valid() ? ens->get(idx).isObject() : false;
+    }
+
+    // элемент Array
+    bool isArray() {
+        return valid() ? ens->get(idx).isArray() : false;
     }
 
     // вывести в Print с форматированием

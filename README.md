@@ -164,12 +164,14 @@ Entry get(int index);       // получить элемент по индекс
 bool valid();               // проверка корректности (существования)
 uint16_t length();          // получить размер (для объектов и массивов. Для остальных 0)
 Type type();                // получить тип элемента
-bool isContainer();         // элемент Array или Object
 Text key();                 // получить ключ
 size_t keyHash();           // получить хэш ключа
 Text value();               // получить значение
-
 void stringify(Print& p);   // вывести в Print с форматированием
+
+bool isContainer();         // элемент Array или Object
+bool isObject();            // элемент Object
+bool isArray();             // элемент Array
 ```
 
 ### `gson::string`
