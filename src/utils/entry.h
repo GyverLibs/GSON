@@ -9,6 +9,7 @@ namespace gson {
 
 class Entry : public su::Text {
    public:
+    Entry() : ens(nullptr), idx(0), str(nullptr) {}
     Entry(const gsutil::Entries<>* ens, parent_t idx, const char* str) : ens(ens), idx(idx), str(str) {
         if (valid()) {
             _str = ens->get(idx).value(str);
@@ -160,9 +161,9 @@ class Entry : public su::Text {
     }
 
    private:
-    const gsutil::Entries<>* ens;
-    const parent_t idx;
-    const char* str;
+    const gsutil::Entries<>* ens = nullptr;
+    parent_t idx = 0;
+    const char* str = nullptr;
 
     void _printTab(Print& p, uint8_t amount) {
         while (amount--) {

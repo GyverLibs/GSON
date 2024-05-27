@@ -95,7 +95,16 @@ class Entries {
         else _eptr = _arr;
     }
     ~Entries() {
-        if (capacity < 0 && _eptr) free(_eptr);
+        destroy();
+    }
+
+    void destroy() {
+        clear();
+        if (capacity < 0 && _eptr) {
+            free(_eptr);
+            _cap = 0;
+            _eptr = nullptr;
+        }
     }
 
     void clear() {

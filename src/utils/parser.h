@@ -27,6 +27,14 @@ class ParserCore {
         return entries.reserve(cap);
     }
 
+    // освободить память
+    void destroy() {
+        entries.destroy();
+        str = nullptr;
+        p = nullptr;
+        error = gson::Error::None;
+    }
+
     // получить количество элементов
     uint16_t length() {
         return str ? entries.length() : 0;

@@ -21,6 +21,7 @@ GSON_MAX_SPEED	KEYWORD1
 #######################################
 
 # parser
+destroy	KEYWORD2
 get	KEYWORD2
 valid	KEYWORD2
 key	KEYWORD2
