@@ -22,6 +22,11 @@ class ParserCore {
    public:
     ParserCore(uint16_t reserve = 0) : entries(reserve) {}
 
+    // зарезервировать память для ускорения парсинга
+    bool reserve(uint16_t cap) {
+        return entries.reserve(cap);
+    }
+
     // получить количество элементов
     uint16_t length() {
         return str ? entries.length() : 0;
