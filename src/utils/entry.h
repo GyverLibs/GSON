@@ -2,33 +2,29 @@
 #include <Arduino.h>
 #include <StringUtils.h>
 
-#include "entries.h"
+#include "entry_stack.h"
 #include "types.h"
 
 namespace gson {
 
 class Entry : public su::Text {
    public:
-    Entry() : ens(nullptr), idx(0), str(nullptr) {}
-    Entry(const gsutil::Entries<>* ens, parent_t idx, const char* str) : ens(ens), idx(idx), str(str) {
-        if (valid()) {
-            _str = ens->get(idx).value(str);
-            _len = ens->get(idx).val_len;
-        }
+    Entry(const gsutil::EntryStack* ens = nullptr, parent_t idx = 0) : ens(ens), idx(idx) {
+        if (_valid()) *((su::Text*)this) = ens->valueText(idx);
     }
 
     // ===================== BY KEY =====================
 
     // получить элемент по ключу
     Entry get(const su::Text& key) const {
-        if (valid() && ens->get(idx).isObject()) {
+        if (_valid() && ens->get(idx).isObject()) {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
                 if (ens->get(i).parent == idx &&
                     ens->get(i).key_offs &&
-                    key.compare(ens->get(i).keyText(str))) return Entry(ens, i, str);
+                    key.compare(ens->keyText(i))) return Entry(ens, i);
             }
         }
-        return Entry(nullptr, 0, str);
+        return Entry();
     }
 
     // содержит элемент с указанным ключом
@@ -54,14 +50,12 @@ class Entry : public su::Text {
 
     // получить элемент по хэшу ключа
     Entry get(size_t hash) const {
-#ifndef GSON_NO_HASH
-        if (valid() && ens->get(idx).isObject() && ens->hashed()) {
+        if (_valid() && ens->hashed() && ens->get(idx).isObject()) {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
-                if (ens->get(i).parent == idx && ens->get(i).key_hash == hash) return Entry(ens, i, str);
+                if (ens->get(i).parent == idx && ens->hash[i] == hash) return Entry(ens, i);
             }
         }
-#endif
-        return Entry(nullptr, 0, str);
+        return Entry();
     }
 
     // содержит элемент с указанным хэшем ключа
@@ -78,15 +72,15 @@ class Entry : public su::Text {
 
     // получить элемент по индексу
     Entry get(int index) const {
-        if (valid() && (uint16_t)index < ens->length() && ens->get(idx).isContainer()) {
+        if (_valid() && (size_t)index < ens->length() && ens->get(idx).isContainer()) {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
                 if (ens->get(i).parent == idx) {
-                    if (!index) return Entry(ens, i, str);
+                    if (!index) return Entry(ens, i);
                     index--;
                 }
             }
         }
-        return Entry(nullptr, 0, str);
+        return Entry();
     }
 
     // доступ по индексу (контейнер - Array или Object)
@@ -96,27 +90,14 @@ class Entry : public su::Text {
 
     // ===================== MISC =====================
 
-    // проверка корректности (существования)
-    inline bool valid() const {
-        return ens && str;
-    }
-
-    inline operator bool() const {
-        return valid();
-    };
-
     // получить ключ
     su::Text key() const {
-        return (valid()) ? ens->get(idx).keyText(str) : "";
+        return _valid() ? ens->keyText(idx) : su::Text();
     }
 
     // получить хэш ключа
     size_t keyHash() const {
-#ifndef GSON_NO_HASH
-        return valid() ? (ens->hashed() ? ens->get(idx).key_hash : ens->get(idx).keyText(str).hash()) : 0;
-#else
-        return 0;
-#endif
+        return _valid() ? (ens->hashed() ? ens->hash[idx] : ens->keyText(idx).hash()) : false;
     }
 
     // получить значение
@@ -125,10 +106,10 @@ class Entry : public su::Text {
     }
 
     // получить размер для объектов и массивов
-    uint16_t length() const {
-        if (!valid() || !ens->get(idx).isContainer()) return 0;
-        uint16_t len = 0;
-        for (uint16_t i = 0; i < ens->length(); i++) {
+    size_t length() const {
+        if (!_valid() || !ens->get(idx).isContainer()) return 0;
+        size_t len = 0;
+        for (size_t i = 0; i < ens->length(); i++) {
             if (ens->get(i).parent == idx) len++;
         }
         return len;
@@ -136,56 +117,71 @@ class Entry : public su::Text {
 
     // получить тип элемента
     gson::Type type() const {
-        return valid() ? ens->get(idx).type : gson::Type::None;
+        return _valid() ? ens->get(idx).type : gson::Type::None;
+    }
+
+    // сравнить тип элемента
+    bool is(gson::Type type) const {
+        return _valid() ? ens->get(idx).type == type : false;
     }
 
     // элемент Array или Object
-    bool isContainer() {
-        return valid() ? ens->get(idx).isContainer() : false;
+    bool isContainer() const {
+        return _valid() ? ens->get(idx).isContainer() : false;
     }
 
     // элемент Object
-    bool isObject() {
-        return valid() ? ens->get(idx).isObject() : false;
+    bool isObject() const {
+        return _valid() ? ens->get(idx).isObject() : false;
     }
 
     // элемент Array
-    bool isArray() {
-        return valid() ? ens->get(idx).isArray() : false;
+    bool isArray() const {
+        return _valid() ? ens->get(idx).isArray() : false;
     }
 
     // вывести в Print с форматированием
-    void stringify(Print& pr) {
-        if (!valid()) return;
+    void stringify(Print& pr) const {
+        if (!_valid()) return;
         if (ens->get(idx).isContainer()) {
-            uint8_t dep = 1;
+            uint8_t depth = 1;
             parent_t index = idx + 1;
             pr.println(ens->get(idx).isObject() ? '{' : '[');
-            _stringify(pr, index, ens->get(index).parent, dep);
+            _stringify(pr, index, ens->get(index).parent, depth);
             pr.println();
             pr.print(ens->get(idx).isObject() ? '}' : ']');
         } else {
-            _print(pr, ens->get(idx));
+            _print(pr, idx);
         }
         pr.println();
     }
 
-   private:
-    const gsutil::Entries<>* ens = nullptr;
-    parent_t idx = 0;
-    const char* str = nullptr;
+    // индекс элемента в общем массиве парсера
+    parent_t index() {
+        return idx;
+    }
 
-    void _printTab(Print& p, uint8_t amount) {
+   private:
+    const gsutil::EntryStack* ens = nullptr;
+    parent_t idx = 0;
+
+    // массив и строка существуют
+    bool _valid() const {
+        return ens && ens->valid();
+    }
+
+    void _printTab(Print& p, uint8_t amount) const {
         while (amount--) {
             p.print(' ');
             p.print(' ');
         }
     }
 
-    void _print(Print& p, gsutil::Entry_t& ent) {
+    void _print(Print& p, parent_t idx) const {
+        gsutil::Entry_t& ent = ens->get(idx);
         if (ent.key_offs) {
             p.print('\"');
-            p.print(ent.keyText(str));
+            p.print(ens->keyText(idx));
             p.print("\":");
         }
         if (ent.is(gson::Type::String)) p.print('\"');
@@ -193,10 +189,10 @@ class Entry : public su::Text {
             case gson::Type::String:
             case gson::Type::Int:
             case gson::Type::Float:
-                p.print(ent.valueText(str));
+                p.print(ens->valueText(idx));
                 break;
             case gson::Type::Bool:
-                p.print((*(ent.value(str)) == 't') ? F("true") : F("false"));
+                p.print((ens->valueText(idx)[0] == 't') ? F("true") : F("false"));
                 break;
             default:
                 break;
@@ -204,36 +200,36 @@ class Entry : public su::Text {
         if (ent.is(gson::Type::String)) p.print('\"');
     }
 
-    void _stringify(Print& p, parent_t& index, parent_t parent, uint8_t& dep) {
+    void _stringify(Print& p, parent_t& idx, parent_t parent, uint8_t& depth) const {
         bool first = true;
-        while (index < ens->length()) {
-            gsutil::Entry_t ent = ens->get(index);
+        while (idx < ens->length()) {
+            gsutil::Entry_t& ent = ens->get(idx);
             if (ent.parent != parent) return;
 
             if (first) first = false;
             else p.print(",\n");
 
             if (ent.isContainer()) {
-                _printTab(p, dep);
+                _printTab(p, depth);
                 if (ent.key_offs) {
                     p.print('\"');
-                    p.print(ent.keyText(str));
+                    p.print(ens->keyText(idx));
                     p.print("\": ");
                 }
                 p.print((ent.isArray()) ? '[' : '{');
                 p.print('\n');
-                parent_t prev = index;
-                index++;
-                dep++;
-                _stringify(p, index, prev, dep);
-                dep--;
+                parent_t prev = idx;
+                idx++;
+                depth++;
+                _stringify(p, idx, prev, depth);
+                depth--;
                 p.print('\n');
-                _printTab(p, dep);
+                _printTab(p, depth);
                 p.print((ent.isArray()) ? ']' : '}');
             } else {
-                _printTab(p, dep);
-                _print(p, ent);
-                index++;
+                _printTab(p, depth);
+                _print(p, idx);
+                idx++;
             }
         }
     }

@@ -1,6 +1,5 @@
 #include <Arduino.h>
 
-// #define GSON_NO_HASH
 #include <GSON.h>
 
 void setup() {

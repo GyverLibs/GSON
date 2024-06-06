@@ -9,19 +9,18 @@
 GSON	KEYWORD1
 Entry	KEYWORD1
 Parser	KEYWORD1
-ParserStatic	KEYWORD1
+ParserStream	KEYWORD1
 Type	KEYWORD1
 Error	KEYWORD1
 
-GSON_NO_HASH	KEYWORD1
-GSON_MAX_SPEED	KEYWORD1
+GSON_NO_LIMITS	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
 # parser
-destroy	KEYWORD2
+reset	KEYWORD2
 get	KEYWORD2
 valid	KEYWORD2
 key	KEYWORD2
@@ -42,11 +41,14 @@ getError	KEYWORD2
 errorIndex	KEYWORD2
 readError	KEYWORD2
 setMaxDepth	KEYWORD2
+getByIndex	KEYWORD2
 
 # entry
 isContainer	KEYWORD2
 isObject	KEYWORD2
 isArray	KEYWORD2
+is	KEYWORD2
+index	KEYWORD2
 
 # string
 clear	KEYWORD2
