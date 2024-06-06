@@ -36,7 +36,7 @@ class ParserStream : public Parser {
     }
 
     // получить скачанный json пакет как Text
-    su::Text getJson() {
+    su::Text getRaw() {
         return json ? su::Text(json.buf(), json.size()) : su::Text();
     }
 

@@ -99,7 +99,7 @@ bool parse(const char* str, size_t length);
 void reset();
 
 // получить скачанный json пакет как Text
-su::Text getJson();
+su::Text getRaw();
 
 void move(ParserStream& ps);
 ```
