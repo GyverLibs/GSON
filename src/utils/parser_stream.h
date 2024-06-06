@@ -18,11 +18,7 @@ class ParserStream : public Parser {
             json.reset();
             return 0;
         }
-        if (!Parser::parse(json, length)) {
-            json.reset();
-            return 0;
-        }
-        return 1;
+        return Parser::parse(json.buf(), length);
     }
 
     // прочитать из строки и сохранить себе
@@ -30,11 +26,7 @@ class ParserStream : public Parser {
         if (!str || !length || !json.resize(length)) return 0;
 
         memcpy((void*)json.buf(), str, length);
-        if (!Parser::parse(json, length)) {
-            json.reset();
-            return 0;
-        }
-        return 1;
+        return Parser::parse(json.buf(), length);
     }
 
     // освободить память
