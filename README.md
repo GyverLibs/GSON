@@ -404,7 +404,7 @@ class MyClass {
     }
 #endif
 
-    void move(MyClass&& p) noexcept {
+    void move(MyClass& p) noexcept {
         parser.move(p.parser);
         str = p.str;
     }
