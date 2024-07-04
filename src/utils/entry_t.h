@@ -62,11 +62,11 @@ struct Entry_t {
         return json + val_offs;
     }
 
-    inline su::Text keyText(const char* json) const {
-        return su::Text(key(json), key_len);
+    inline Text keyText(const char* json) const {
+        return Text(key(json), key_len);
     }
-    inline su::Text valueText(const char* json) const {
-        return su::Text(value(json), val_len);
+    inline Text valueText(const char* json) const {
+        return Text(value(json), val_len);
     }
 
     inline bool is(gson::Type t) const {

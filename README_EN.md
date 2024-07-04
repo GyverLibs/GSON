@@ -195,7 +195,7 @@ The meaning is like `String`-string: the dynamic document will increase during p
 
 `` `CPP
 // received json
-Char JSON [] = R "RAW (" Key ": Value," Int ": 12345," Obj ": {" Float ": 3.14," Bool ": FALSE}," arr ":" Hello ", true]}) RAW ";
+Char JSON [] = R "BIN (" Key ": Value," Int ": 12345," Obj ": {" Float ": 3.14," Bool ": FALSE}," arr ":" Hello ", true]}) BIN ";
 String json = "\" key \ ": \" value \ ", \" int \ ": 12345, \" Obj \ ": {\" float \ ": 3.14, \" bool \ ": false}, \ \"Arr \": [\ "Hello \", true]}; ";
 
 // Parish

@@ -7,16 +7,16 @@
 
 namespace gson {
 
-class Entry : public su::Text {
+class Entry : public Text {
    public:
     Entry(const gsutil::EntryStack* ens = nullptr, parent_t idx = 0) : ens(ens), idx(idx) {
-        if (_valid()) *((su::Text*)this) = ens->valueText(idx);
+        if (_valid()) *((Text*)this) = ens->valueText(idx);
     }
 
     // ===================== BY KEY =====================
 
     // получить элемент по ключу
-    Entry get(const su::Text& key) const {
+    Entry get(const Text& key) const {
         if (_valid() && ens->get(idx).isObject()) {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
                 if (ens->get(i).parent == idx &&
@@ -28,7 +28,7 @@ class Entry : public su::Text {
     }
 
     // содержит элемент с указанным ключом
-    bool includes(const su::Text& key) const {
+    bool has(const Text& key) const {
         return get(key).valid();
     }
 
@@ -59,7 +59,7 @@ class Entry : public su::Text {
     }
 
     // содержит элемент с указанным хэшем ключа
-    bool includes(size_t hash) const {
+    bool has(size_t hash) const {
         return get(hash).valid();
     }
 
@@ -91,8 +91,8 @@ class Entry : public su::Text {
     // ===================== MISC =====================
 
     // получить ключ
-    su::Text key() const {
-        return _valid() ? ens->keyText(idx) : su::Text();
+    Text key() const {
+        return _valid() ? ens->keyText(idx) : Text();
     }
 
     // получить хэш ключа
@@ -101,7 +101,7 @@ class Entry : public su::Text {
     }
 
     // получить значение
-    su::Text value() const {
+    Text value() const {
         return *this;
     }
 
@@ -159,6 +159,14 @@ class Entry : public su::Text {
     // индекс элемента в общем массиве парсера
     parent_t index() {
         return idx;
+    }
+
+    // ===========================
+    bool includes(size_t hash) const __attribute__((deprecated)) {
+        return has(hash);
+    }
+    bool includes(const Text& key) const __attribute__((deprecated)) {
+        return has(key);
     }
 
    private:

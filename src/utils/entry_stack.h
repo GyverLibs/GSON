@@ -34,10 +34,10 @@ class EntryStack : public gtl::stack_uniq<Entry_t> {
         gtl::stack_uniq<Entry_t>::clear();
     }
 
-    inline su::Text keyText(int idx) const {
+    inline Text keyText(int idx) const {
         return get(idx).keyText(str);
     }
-    inline su::Text valueText(int idx) const {
+    inline Text valueText(int idx) const {
         return get(idx).valueText(str);
     }
     size_t getHash(int idx) {

@@ -99,7 +99,7 @@ bool parse(const char* str, size_t length);
 void reset();
 
 // получить скачанный json пакет как Text
-su::Text getRaw();
+Text getRaw();
 
 void move(ParserStream& ps);
 ```
@@ -175,10 +175,10 @@ EmptyString
 
 ```cpp
 Entry get(Text key);        // получить элемент по ключу
-bool includes(Text key);    // содержит элемент с указанным ключом
+bool has(Text key);         // содержит элемент с указанным ключом
 
 Entry get(size_t hash);     // получить элемент по хэшу ключа
-bool includes(size_t hash); // содержит элемент с указанным хэшем ключа
+bool has(size_t hash);      // содержит элемент с указанным хэшем ключа
 
 Entry get(int index);       // получить элемент по индексу
 
@@ -247,13 +247,16 @@ string& addInt(Text key, const Value& value);
 string& addInt(const Value& value);
 string& addIntRaw(const Value& value);   // без запятой
 
-string& beginObj(Text key = "");   // начать объект
-string& endObj();   // завершить объект
+string& beginObj(Text key = "");    // начать объект
+string& endObj(bool last = false);  // завершить объект. last - не добавлять запятую
 
-string& beginArr(Text key = "");   // начать массив
-string& endArr();   // завершить массив
+string& beginArr(Text key = "");    // начать массив
+string& endArr(bool last = false);  // завершить массив. last - не добавлять запятую
 
-string& end();      // завершить пакет
+string& end();                      // завершить пакет (убрать запятую)
+
+// заменить последнюю запятую символом. Если символ '\0' - удалить запятую. Если это не запятая - добавить символ
+void replaceComma(char sym);
 ```
 
 <a id="usage"></a>
@@ -313,6 +316,7 @@ Serial.println(p[F("int")]);   // 12345
 int val = p["int"].toInt16();  // конвертация в указанный тип
 val = p["int"];                // авто конвертация
 float f = p["obj"]["float"];   // вложенный объект
+bool b = p["flag"].toBool();   // bool
 Serial.println(p["arr"][0]);   // hello
 Serial.println(p["arr"][1]);   // true
 
@@ -335,6 +339,13 @@ Serial.println(p[0][0]);  // 123
 Serial.println(p[0][1]);  // 456
 Serial.println(p[1][0]);  // abc
 Serial.println(p[1][1]);  // def
+```
+
+> `Text` автоматически конвертируется во все типы, кроме `bool`. Используй `toBool()`. Преобразование к bool показывает существование элемента, можно использовать вместо `has`
+
+```cpp
+if (p["foo"]) {
+}
 ```
 
 Каждый элемент можно вывести в тип `gson::Entry` по имени (из объекта) или индексу (из массива) и использовать отдельно, чтобы не "искать" его заново:
@@ -440,6 +451,321 @@ Serial.println(gs);              // вывод в порт
 Serial.println(gs.s);            // вывод в порт (или так)
 ```
 
+
+## BSON
+Простой "бинарный" вариант JSON пакета, собирается линейно. Поддерживает "коды" - один байт, который может быть ключом или значением, при распаковке требуется заменить его на строку из известного списка по индексу.
+```cpp
+operator Text();
+
+// data
+void addCode(uint8_t key, uint8_t val);
+void addCode(Text key, uint8_t val);
+void addCode(uint8_t val);
+
+// bool
+void addBool(bool b);
+void addBool(uint8_t key, bool b);
+void addBool(Text key, bool b);
+
+// int
+void addInt(T val);
+void addInt(uint8_t key, T val);
+void addInt(Text key, T val);
+
+// uint
+void addUint(T val);
+void addUint(uint8_t key, T val);
+void addUint(Text key, T val);
+
+// float
+void addFloat(float f, uint8_t dec);
+void addFloat(uint8_t key, float f, uint8_t dec);
+void addFloat(Text key, float f, uint8_t dec);
+
+// text
+void addText(Text text);
+void addText(uint8_t key, Text text);
+void addText(Text key, Text text);
+
+// key
+void addKey(uint8_t key);
+void addKey(Text key);
+
+// object
+void beginObj();
+void beginObj(uint8_t key);
+void beginObj(Text key);
+void endObj();
+
+// array
+void beginArr();
+void beginArr(uint8_t key);
+void beginArr(Text key);
+void endArr();
+```
+
+Пакет имеет следующую структуру:
+```cpp
+// [BS_KEY_CODE][code]
+// [BS_KEY_STR8][len] ...
+// [BS_KEY_STR16][lenMSB][lenLSB] ...
+// [BS_DATA_CODE][code]
+// [BS_DATA_INTx][len] MSB...
+// [BS_DATA_FLOAT][dec] MSB...
+// [BS_DATA_STR8][len] ...
+// [BS_DATA_STR16][lenMSB][lenLSB] ...
+```
+
+Примеры распаковки:
+<details>
+<summary>Arduino</summary>
+
+```cpp
+String decodeBsonArduino(BSON& b) {
+    String s;
+    for (size_t i = 0; i < b.length(); i++) {
+        char c = b[i];
+        switch (c) {
+            case ']':
+            case '}':
+                if (s[s.length() - 1] == ',') s[s.length() - 1] = c;
+                else s += c;
+                s += ',';
+                break;
+
+            case '[':
+            case '{':
+                s += c;
+                break;
+
+            case BS_DATA_CODE:
+            case BS_KEY_CODE:
+                s += (uint8_t)b[++i];
+                s += (c == BS_KEY_CODE) ? ':' : ',';
+                break;
+
+            case BS_DATA_STR16:
+            case BS_KEY_STR16:
+            case BS_DATA_STR8:
+            case BS_KEY_STR8: {
+                bool key = (c == BS_KEY_STR8 || c == BS_KEY_STR16);
+                uint16_t len = b[++i];
+                if (c == BS_KEY_STR16 || c == BS_DATA_STR16) {
+                    len <<= 8;
+                    len |= b[++i];
+                }
+                s += '\"';
+                while (len--) s += (char)b[++i];
+                s += '\"';
+                s += key ? ':' : ',';
+            } break;
+
+            case BS_DATA_INT8:
+            case BS_DATA_INT16:
+            case BS_DATA_INT32:
+            case BS_DATA_INT64: {
+                uint8_t size = c - '0';
+                uint32_t v = 0;
+                while (size--) {
+                    v <<= 8;
+                    v |= b[++i];
+                }
+                s += v;
+                s += ',';
+            } break;
+
+            case BS_DATA_UINT8:
+            case BS_DATA_UINT16:
+            case BS_DATA_UINT32:
+            case BS_DATA_UINT64: {
+                uint8_t size = c - 'a';
+                uint32_t v = 0;
+                while (size--) {
+                    v <<= 8;
+                    v |= b[++i];
+                }
+                s += v;
+                s += ',';
+            } break;
+
+            case BS_DATA_FLOAT: {
+                uint32_t v = 0;
+                uint8_t dec = b[++i];
+                uint8_t size = 4;
+                while (size--) {
+                    v <<= 8;
+                    v |= b[++i];
+                }
+                s += *((float*)&v); // todo dec
+                s += ',';
+            } break;
+        }
+    }
+    if (s[s.length() - 1] == ',') s.remove(s.length() - 1);
+    return s;
+}
+```
+</details>
+<details>
+<summary>JavaScript</summary>
+
+```cpp
+const codes = [
+    'some',
+    'string',
+    'constants',
+];
+
+// @param b {Uint8Array}
+export default function decodeBson(b) {
+    if (!b || !(b instanceof Uint8Array) || !b.length) return null;
+
+    const BS_KEY_CODE = '$';
+    const BS_KEY_STR8 = 'k';
+    const BS_KEY_STR16 = 'K';
+
+    const BS_DATA_CODE = '#';
+    const BS_DATA_FLOAT = 'f';
+    const BS_DATA_STR8 = 's';
+    const BS_DATA_STR16 = 'S';
+
+    const BS_DATA_INT8 = '1';
+    const BS_DATA_INT16 = '2';
+    const BS_DATA_INT32 = '4';
+    const BS_DATA_INT64 = '8';
+
+    const BS_DATA_UINT8 = 'b';
+    const BS_DATA_UINT16 = 'c';
+    const BS_DATA_UINT32 = 'e';
+    const BS_DATA_UINT64 = 'i';
+
+    function ieee32ToFloat(intval) {
+        var fval = 0.0;
+        var x;
+        var m;
+        var s;
+        s = (intval & 0x80000000) ? -1 : 1;
+        x = ((intval >> 23) & 0xFF);
+        m = (intval & 0x7FFFFF);
+        switch (x) {
+            case 0:
+                break;
+            case 0xFF:
+                if (m) fval = NaN;
+                else if (s > 0) fval = Number.POSITIVE_INFINITY;
+                else fval = Number.NEGATIVE_INFINITY;
+                break;
+            default:
+                x -= 127;
+                m += 0x800000;
+                fval = s * (m / 8388608.0) * Math.pow(2, x);
+                break;
+        }
+        return fval;
+    }
+
+    let s = '';
+    for (let i = 0; i < b.length; i++) {
+        let c = String.fromCharCode(b[i]);
+        switch (c) {
+            case ']':
+            case '}':
+                if (s[s.length - 1] == ',') s = s.slice(0, -1);
+                s += c;
+                s += ',';
+                break;
+
+            case '[':
+            case '{':
+                s += c;
+                break;
+
+            case BS_DATA_CODE:
+            case BS_KEY_CODE: {
+                s += '"';
+                s += codes[b[++i]];
+                s += '"';
+                s += (c == BS_KEY_CODE) ? ':' : ',';
+            } break;
+
+            case BS_DATA_STR16:
+            case BS_KEY_STR16:
+            case BS_DATA_STR8:
+            case BS_KEY_STR8: {
+                let key = (c == BS_KEY_STR8 || c == BS_KEY_STR16);
+                let len = b[++i];
+                if (c == BS_KEY_STR16 || c == BS_DATA_STR16) {
+                    len <<= 8;
+                    len |= b[++i];
+                }
+                s += '\"';
+                while (len--) s += String.fromCharCode(b[++i]);
+                s += '\"';
+                s += key ? ':' : ',';
+            } break;
+
+            case BS_DATA_INT8:
+            case BS_DATA_INT16:
+            case BS_DATA_INT32:
+            case BS_DATA_INT64: {
+                let size = b[i] - '0'.charCodeAt(0);
+                let v = 0;
+                while (size--) {
+                    v <<= 8;
+                    v |= b[++i];
+                }
+                switch (c) {
+                    case BS_DATA_INT8: s += (new Int8Array([v]))[0]; break;
+                    case BS_DATA_INT16: s += (new Int16Array([v]))[0]; break;
+                    case BS_DATA_INT32: s += (new Int32Array([v]))[0]; break;
+                    case BS_DATA_UINT64: s += (new BigInt64Array([v]))[0]; break;
+                }
+                s += ',';
+            } break;
+
+            case BS_DATA_UINT8:
+            case BS_DATA_UINT16:
+            case BS_DATA_UINT32:
+            case BS_DATA_UINT64: {
+                let size = b[i] - 'a'.charCodeAt(0);
+                let v = 0;
+                while (size--) {
+                    v <<= 8;
+                    v |= b[++i];
+                }
+                switch (c) {
+                    case BS_DATA_UINT8: s += (new Uint8Array([v]))[0]; break;
+                    case BS_DATA_UINT16: s += (new Uint16Array([v]))[0]; break;
+                    case BS_DATA_UINT32:
+                    case BS_DATA_UINT64: s += (v >>> 0); break;
+                }
+                s += ',';
+            } break;
+
+            case BS_DATA_FLOAT: {
+                let v = 0;
+                let dec = b[++i];
+                let size = 4;
+                while (size--) {
+                    v <<= 8;
+                    v |= b[++i];
+                }
+                s += ieee32ToFloat(v).toFixed(dec);
+                s += ',';
+            } break;
+        }
+    }
+    if (s[s.length - 1] == ',') s = s.slice(0, -1);
+
+    try {
+        return JSON.parse(s);
+    } catch (e) {
+        throw new Error("JSON error")
+    }
+}
+```
+</details>
+
 <a id="versions"></a>
 
 ## Версии
@@ -450,7 +776,7 @@ Serial.println(gs.s);            // вывод в порт (или так)
 - v1.4 - оптимизация парсера, ускорение чтения, изначальная строка больше не меняется парсером
 - v1.4.1 - поддержка ядра esp8266 v2.x
 - v1.4.2 - добавлены Raw методы в string
-- v1.4.3 - обновление до актуальной StringUtils, парсинг из su::Text
+- v1.4.3 - обновление до актуальной StringUtils, парсинг из Text
 - v1.4.6 - добавил stringify для Entry
 - v1.4.9 - добавлено больше функций addText в gson::string
 - v1.5.0 
@@ -460,6 +786,7 @@ Serial.println(gs.s);            // вывод в порт (или так)
   - Добавлен парсер из Stream
   - Упразднён Static парсер
   - Мелкие улучшения
+- v1.5.1 - добавлен сборщик бираного json (bson)
 
 <a id="install"></a>
 

@@ -70,50 +70,38 @@ class Parser {
     // ===================== BY KEY =====================
 
     // доступ по ключу (главный контейнер - Object)
-    gson::Entry get(const su::Text& key) const {
-        if (length() && ents[0].isObject()) {
-            for (uint16_t i = 1; i < length(); i++) {
-                if (ents[i].parent == 0 && ents[i].key_offs && key.compare(ents.keyText(i))) {
-                    return gson::Entry(&ents, i);
-                }
-            }
-        }
-        return gson::Entry();
+    gson::Entry get(const Text& key) const {
+        return length() ? gson::Entry(&ents, 0).get(key) : gson::Entry();
     }
-    gson::Entry operator[](const su::Text& key) const {
+    gson::Entry operator[](const Text& key) const {
         return get(key);
+    }
+
+    // содержит элемент с указанным ключом
+    bool has(const Text& key) const {
+        return get(key).valid();
     }
 
     // ===================== BY HASH =====================
 
     // доступ по хэшу ключа (главный контейнер - Object)
     gson::Entry get(size_t hash) const {
-        if (length() && ents[0].is(gson::Type::Object) && ents.hashed()) {
-            for (uint16_t i = 1; i < length(); i++) {
-                if (ents[i].parent == 0 && ents.hash[i] == hash) {
-                    return gson::Entry(&ents, i);
-                }
-            }
-        }
-        return gson::Entry();
+        return length() ? gson::Entry(&ents, 0).get(hash) : gson::Entry();
     }
     gson::Entry operator[](size_t hash) const {
         return get(hash);
+    }
+
+    // содержит элемент с указанным хэшем ключа
+    bool has(size_t hash) const {
+        return get(hash).valid();
     }
 
     // ===================== BY INDEX =====================
 
     // доступ по индексу в главный контейнер - Array или Object
     gson::Entry get(int index) const {
-        if (length() && (uint16_t)index < length() && ents[0].isContainer()) {
-            for (uint16_t i = 1; i < length(); i++) {
-                if (ents[i].parent == 0) {
-                    if (!index) return gson::Entry(&ents, i);
-                    index--;
-                }
-            }
-        }
-        return gson::Entry();
+        return length() ? gson::Entry(&ents, 0).get(index) : gson::Entry();
     }
     gson::Entry operator[](int index) const {
         return get(index);
@@ -129,7 +117,7 @@ class Parser {
     // ===================== MISC =====================
 
     // прочитать ключ по индексу
-    su::Text key(int idx) const {
+    Text key(int idx) const {
         return (length() && (uint16_t)idx < length()) ? ents.keyText(idx) : "";
     }
 
@@ -139,7 +127,7 @@ class Parser {
     }
 
     // прочитать значение по индексу
-    su::Text value(int idx) const {
+    Text value(int idx) const {
         return (length() && (uint16_t)idx < length()) ? ents.valueText(idx) : "";
     }
 
@@ -175,7 +163,7 @@ class Parser {
 
     // ============ PARSE ============
     // парсить. Вернёт true при успешном парсинге
-    bool parse(const su::Text& json) {
+    bool parse(const Text& json) {
         return json.pgm() ? 0 : _startParse(json.str(), json.length());
     }
     bool parse(const char* json, uint16_t len) {

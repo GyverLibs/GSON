@@ -20,7 +20,7 @@ class string : public Printable {
     }
 
     // доступ к строке
-    operator su::Text() {
+    operator Text() {
         return s;
     }
 
@@ -46,7 +46,7 @@ class string : public Printable {
 
     // завершить пакет
     string& end() {
-        _replaceComma('\0');
+        replaceComma('\0');
         return *this;
     }
 
@@ -55,7 +55,7 @@ class string : public Printable {
     // прибавить gson::string. Будет добавлена запятая
     string& add(const string& str) {
         s += str.s;
-        _replaceComma(',');
+        replaceComma(',');
         return *this;
     }
 
@@ -67,7 +67,7 @@ class string : public Printable {
     // =============== KEY ===============
 
     // добавить ключ (строка любого типа)
-    string& addKey(const su::Text& key) {
+    string& addKey(const Text& key) {
         if (key.valid()) {
             _addRaw(key, true, false);
             colon();
@@ -76,26 +76,26 @@ class string : public Printable {
     }
 
     // добавить ключ (строка любого типа)
-    string& operator[](const su::Text& key) {
+    string& operator[](const Text& key) {
         return addKey(key);
     }
 
     // =============== TEXT ===============
 
     // прибавить текст (строка любого типа) без запятой и кавычек
-    string& addTextRaw(const su::Text& txt) {
+    string& addTextRaw(const Text& txt) {
         if (txt.valid()) _addRaw(txt, false, false);
         return *this;
     }
 
     // прибавить текст (строка любого типа) без запятой и кавычек с escape символов
-    string& addTextRawEsc(const su::Text& txt) {
+    string& addTextRawEsc(const Text& txt) {
         if (txt.valid()) _addRaw(txt, false, true);
         return *this;
     }
 
     // прибавить текст (строка любого типа) без кавычек
-    string& addText(const su::Text& txt) {
+    string& addText(const Text& txt) {
         if (txt.valid()) {
             addTextRaw(txt);
             comma();
@@ -104,7 +104,7 @@ class string : public Printable {
     }
 
     // прибавить текст (строка любого типа) без кавычек с escape символов
-    string& addTextEsc(const su::Text& txt) {
+    string& addTextEsc(const Text& txt) {
         if (txt.valid()) {
             addTextRawEsc(txt);
             comma();
@@ -113,7 +113,7 @@ class string : public Printable {
     }
 
     // добавить текст (строка любого типа) без кавычек
-    string& addText(const su::Text& key, const su::Text& txt) {
+    string& addText(const Text& key, const Text& txt) {
         if (key.valid() && txt.valid()) {
             addKey(key);
             addText(txt);
@@ -122,7 +122,7 @@ class string : public Printable {
     }
 
     // добавить текст (строка любого типа) без кавычек с escape символов
-    string& addTextEsc(const su::Text& key, const su::Text& txt) {
+    string& addTextEsc(const Text& key, const Text& txt) {
         if (key.valid() && txt.valid()) {
             addKey(key);
             addTextEsc(txt);
@@ -130,16 +130,16 @@ class string : public Printable {
         return *this;
     }
 
-    // =============== STRING RAW ===============
+    // =============== STRING BIN ===============
 
     // добавить строку (строка любого типа) с escape символов без запятой
-    string& addStringRawEsc(const su::Text& value) {
+    string& addStringRawEsc(const Text& value) {
         if (value.valid()) _addRaw(value, true, true);
         return *this;
     }
 
     // добавить строку (строка любого типа) без запятой
-    string& addStringRaw(const su::Text& value) {
+    string& addStringRaw(const Text& value) {
         if (value.valid()) _addRaw(value, true, false);
         return *this;
     }
@@ -147,7 +147,7 @@ class string : public Printable {
     // =============== STRING ===============
 
     // добавить строку (строка любого типа) с escape символов
-    string& addStringEsc(const su::Text& key, const su::Text& value) {
+    string& addStringEsc(const Text& key, const Text& value) {
         if (key.valid() && value.valid()) {
             addKey(key);
             addStringEsc(value);
@@ -156,7 +156,7 @@ class string : public Printable {
     }
 
     // добавить строку (строка любого типа) с escape символов
-    string& addStringEsc(const su::Text& value) {
+    string& addStringEsc(const Text& value) {
         if (value.valid()) {
             _addRaw(value, true, true);
             comma();
@@ -165,7 +165,7 @@ class string : public Printable {
     }
 
     // добавить строку (строка любого типа)
-    string& addString(const su::Text& key, const su::Text& value) {
+    string& addString(const Text& key, const Text& value) {
         if (key.valid() && value.valid()) {
             addKey(key);
             addString(value);
@@ -174,7 +174,7 @@ class string : public Printable {
     }
 
     // добавить строку (строка любого типа)
-    string& addString(const su::Text& value) {
+    string& addString(const Text& value) {
         if (value.valid()) {
             _addRaw(value, true, false);
             comma();
@@ -204,17 +204,17 @@ class string : public Printable {
         _addString(value);
     }
 
-    void operator=(const su::Text& value) {
+    void operator=(const Text& value) {
         _addString(value);
     }
-    void operator+=(const su::Text& value) {
+    void operator+=(const Text& value) {
         _addString(value);
     }
 
     // =============== BOOL ===============
 
     // добавить bool
-    string& addBool(const su::Text& key, const bool& value) {
+    string& addBool(const Text& key, const bool& value) {
         if (key.valid()) {
             addKey(key);
             addBool(value);
@@ -246,7 +246,7 @@ class string : public Printable {
     // =============== FLOAT ===============
 
     // добавить float
-    string& addFloat(const su::Text& key, const double& value, uint8_t dec = 2) {
+    string& addFloat(const Text& key, const double& value, uint8_t dec = 2) {
         if (key.valid()) {
             addKey(key);
             addFloat(value, dec);
@@ -284,7 +284,7 @@ class string : public Printable {
 
 #ifndef SUTIL_NO_VALUE
     // добавить int
-    string& addInt(const su::Text& key, const su::Value& value) {
+    string& addInt(const Text& key, const Value& value) {
         if (key.valid() && value.valid()) {
             addKey(key);
             addInt(value);
@@ -293,7 +293,7 @@ class string : public Printable {
     }
 
     // добавить int
-    string& addInt(const su::Value& value) {
+    string& addInt(const Value& value) {
         if (value.valid()) {
             value.addString(s);
             comma();
@@ -302,14 +302,14 @@ class string : public Printable {
     }
 
     // добавить int без запятой
-    string& addIntRaw(const su::Value& value) {
+    string& addIntRaw(const Value& value) {
         if (value.valid()) value.addString(s);
         return *this;
     }
 #else
     // добавить int
     template <typename T>
-    string& addInt(const su::Text& key, T value) {
+    string& addInt(const Text& key, T value) {
         if (key.valid()) {
             addKey(key);
             addInt(value);
@@ -333,10 +333,10 @@ class string : public Printable {
     }
 #endif
 
-    void operator=(const su::Value& value) {
+    void operator=(const Value& value) {
         addInt(value);
     }
-    void operator+=(const su::Value& value) {
+    void operator+=(const Value& value) {
         addInt(value);
     }
 
@@ -414,30 +414,30 @@ class string : public Printable {
     // =============== CONTAINER ===============
 
     // начать объект
-    string& beginObj(const su::Text& key = su::Text()) {
+    string& beginObj(const Text& key = Text()) {
         addKey(key);
         s += '{';
         return *this;
     }
 
-    // завершить объект
-    string& endObj() {
-        _replaceComma('}');
-        comma();
+    // завершить объект. last - не добавлять запятую
+    string& endObj(bool last = false) {
+        replaceComma('}');
+        if (!last) comma();
         return *this;
     }
 
     // начать массив
-    string& beginArr(const su::Text& key = su::Text()) {
+    string& beginArr(const Text& key = Text()) {
         addKey(key);
         s += '[';
         return *this;
     }
 
-    // завершить массив
-    string& endArr() {
-        _replaceComma(']');
-        comma();
+    // завершить массив. last - не добавлять запятую
+    string& endArr(bool last = false) {
+        replaceComma(']');
+        if (!last) comma();
         return *this;
     }
 
@@ -468,7 +468,7 @@ class string : public Printable {
     virtual void afterValue() {}
 
     // escape символов
-    virtual void escape(const su::Text& text) {
+    virtual void escape(const Text& text) {
         uint16_t len = text.length();
         char p = 0;
         for (uint16_t i = 0; i < len; i++) {
@@ -499,10 +499,21 @@ class string : public Printable {
         }
     }
 
+    // заменить последнюю запятую символом. Если символ '\0' - удалить запятую. Если это не запятая - добавить символ
+    void replaceComma(char sym) {
+        int16_t len = s.length() - 1;
+        if (s[len] == ',') {
+            if (!sym) s.remove(len);
+            else s[len] = sym;
+        } else {
+            if (sym) s += sym;
+        }
+    }
+
    private:
     bool _esc = true;
 
-    void _addRaw(const su::Text& text, bool quot, bool esc) {
+    void _addRaw(const Text& text, bool quot, bool esc) {
         if (quot) quotes();
         if (esc) {
             if (!s.reserve(s.length() + text.length())) return;
@@ -512,16 +523,7 @@ class string : public Printable {
         }
         if (quot) quotes();
     }
-    void _replaceComma(const char& sym) {
-        int16_t len = s.length() - 1;
-        if (s[len] == ',') {
-            if (!sym) s.remove(len);
-            else s[len] = sym;
-        } else {
-            if (sym) s += sym;
-        }
-    }
-    void _addString(const su::Text& text) {
+    void _addString(const Text& text) {
         _addRaw(text, true, _esc);
         comma();
     }

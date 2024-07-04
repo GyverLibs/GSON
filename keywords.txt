@@ -27,7 +27,7 @@ key	KEYWORD2
 value	KEYWORD2
 length	KEYWORD2
 type	KEYWORD2
-includes	KEYWORD2
+has	KEYWORD2
 parent	KEYWORD2
 keyHash	KEYWORD2
 hashKeys	KEYWORD2
@@ -81,6 +81,7 @@ quotes	KEYWORD2
 comma	KEYWORD2
 colon	KEYWORD2
 escapeDefault	KEYWORD2
+replaceComma	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
