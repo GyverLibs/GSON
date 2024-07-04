@@ -609,7 +609,7 @@ String decodeBsonArduino(BSON& b) {
 <details>
 <summary>JavaScript</summary>
 
-```cpp
+```js
 const codes = [
     'some',
     'string',
