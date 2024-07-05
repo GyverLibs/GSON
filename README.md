@@ -609,7 +609,13 @@ export default function decodeBson(b) {
             case BS_VAL_STR: {
                 let len = unpack5(data, b[++i]);
                 i++;
-                s += '"' + new TextDecoder().decode(b.slice(i, i + len)) + '"';
+                let txt = new TextDecoder().decode(b.slice(i, i + len));
+                txt = txt.replaceAll(/([^\\])\\([^\"\\nrt])/ig, "$1\\\\$2")
+                    .replaceAll(/\t/ig, "\\t")
+                    .replaceAll(/\n/ig, "\\n")
+                    .replaceAll(/\r/ig, "\\r")
+                    .replaceAll(/([^\\])(")/ig, '$1\\"');
+                s += '"' + txt + '"';
                 s += (type == BS_KEY_STR) ? ':' : ',';
                 i += len - 1;
             } break;
@@ -636,10 +642,7 @@ export default function decodeBson(b) {
         }
     }
     if (s[s.length - 1] == ',') s = s.slice(0, -1);
-    s = s.replaceAll(/\t/ig, "\\t")
-        .replaceAll(/\n/ig, "\\n")
-        .replaceAll(/\r/ig, "\\r");
-    
+
     try {
         return JSON.parse(s);
     } catch (e) {
