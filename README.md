@@ -22,7 +22,7 @@
 
 ### Зависимости
 - [StringUtils](https://github.com/GyverLibs/StringUtils)
-- [GTL](https://github.com/GyverLibs/GTL)
+- [GTL](https://github.com/GyverLibs/GTL) v1.0.7+
 
 ## Содержание
 - [Документация](#docs)
@@ -453,159 +453,83 @@ Serial.println(gs.s);            // вывод в порт (или так)
 
 
 ## BSON
-Простой "бинарный" вариант JSON пакета, собирается линейно. Поддерживает "коды" - один байт, который может быть ключом или значением, при распаковке требуется заменить его на строку из известного списка по индексу.
+Простой "бинарный" вариант JSON пакета, собирается линейно. В среднем в 2 раза легче обычного строкового json, а сборка проходит гораздо быстрее. Поддерживает "коды" - один байт, который может быть ключом или значением, при распаковке требуется заменить его на строку из известного списка по индексу.
 ```cpp
 operator Text();
 
-// data
-void addCode(uint8_t key, uint8_t val);
-void addCode(Text key, uint8_t val);
-void addCode(uint8_t val);
+// code
+void addCode(uint16_t key, uint16_t val);
+void addCode(Text key, uint16_t val);
+void addCode(uint16_t val);
 
 // bool
 void addBool(bool b);
-void addBool(uint8_t key, bool b);
+void addBool(uint16_t key, bool b);
 void addBool(Text key, bool b);
 
-// int
-void addInt(T val);
-void addInt(uint8_t key, T val);
-void addInt(Text key, T val);
-
 // uint
+template <typename T>
 void addUint(T val);
-void addUint(uint8_t key, T val);
+void addUint(uint64_t val);
+template <typename T>
+void addUint(uint16_t key, T val);
+template <typename T>
 void addUint(Text key, T val);
 
+// int
+template <typename T>
+void addInt(T val);
+void addInt(int64_t val);
+template <typename T>
+void addInt(uint16_t key, T val);
+template <typename T>
+void addInt(Text key, T val);
+
 // float
-void addFloat(float f, uint8_t dec);
-void addFloat(uint8_t key, float f, uint8_t dec);
-void addFloat(Text key, float f, uint8_t dec);
+template <typename T>
+void addFloat(T value, uint8_t dec);
+template <typename T>
+void addFloat(uint16_t key, T value, uint8_t dec);
+template <typename T>
+void addFloat(Text key, T value, uint8_t dec);
 
 // text
 void addText(Text text);
-void addText(uint8_t key, Text text);
+void addText(uint16_t key, Text text);
 void addText(Text key, Text text);
 
 // key
-void addKey(uint8_t key);
+void addKey(uint16_t key);
 void addKey(Text key);
 
 // object
 void beginObj();
-void beginObj(uint8_t key);
+void beginObj(uint16_t key);
 void beginObj(Text key);
 void endObj();
 
 // array
 void beginArr();
-void beginArr(uint8_t key);
+void beginArr(uint16_t key);
 void beginArr(Text key);
 void endArr();
 ```
 
 Пакет имеет следующую структуру:
 ```cpp
-// [BS_KEY_CODE][code]
-// [BS_KEY_STR8][len] ...
-// [BS_KEY_STR16][lenMSB][lenLSB] ...
-// [BS_DATA_CODE][code]
-// [BS_DATA_INTx][len] MSB...
-// [BS_DATA_FLOAT][dec] MSB...
-// [BS_DATA_STR8][len] ...
-// [BS_DATA_STR16][lenMSB][lenLSB] ...
+/*
+0 key code: [code msb5] + [code8]
+1 key str: [len msb5] + [len8] + [...]
+2 val code: [code msb5] + [code8]
+3 val str: [len msb5] + [len8] + [...]
+4 val int: [sign1 + len4]
+5 val float: [dec5]
+6 open: [1obj / 0arr]
+7 close: [1obj / 0arr]
+*/
 ```
 
 Примеры распаковки:
-<details>
-<summary>Arduino</summary>
-
-```cpp
-String decodeBsonArduino(BSON& b) {
-    String s;
-    for (size_t i = 0; i < b.length(); i++) {
-        char c = b[i];
-        switch (c) {
-            case ']':
-            case '}':
-                if (s[s.length() - 1] == ',') s[s.length() - 1] = c;
-                else s += c;
-                s += ',';
-                break;
-
-            case '[':
-            case '{':
-                s += c;
-                break;
-
-            case BS_DATA_CODE:
-            case BS_KEY_CODE:
-                s += (uint8_t)b[++i];
-                s += (c == BS_KEY_CODE) ? ':' : ',';
-                break;
-
-            case BS_DATA_STR16:
-            case BS_KEY_STR16:
-            case BS_DATA_STR8:
-            case BS_KEY_STR8: {
-                bool key = (c == BS_KEY_STR8 || c == BS_KEY_STR16);
-                uint16_t len = b[++i];
-                if (c == BS_KEY_STR16 || c == BS_DATA_STR16) {
-                    len <<= 8;
-                    len |= b[++i];
-                }
-                s += '\"';
-                while (len--) s += (char)b[++i];
-                s += '\"';
-                s += key ? ':' : ',';
-            } break;
-
-            case BS_DATA_INT8:
-            case BS_DATA_INT16:
-            case BS_DATA_INT32:
-            case BS_DATA_INT64: {
-                uint8_t size = c - '0';
-                uint32_t v = 0;
-                while (size--) {
-                    v <<= 8;
-                    v |= b[++i];
-                }
-                s += v;
-                s += ',';
-            } break;
-
-            case BS_DATA_UINT8:
-            case BS_DATA_UINT16:
-            case BS_DATA_UINT32:
-            case BS_DATA_UINT64: {
-                uint8_t size = c - 'a';
-                uint32_t v = 0;
-                while (size--) {
-                    v <<= 8;
-                    v |= b[++i];
-                }
-                s += v;
-                s += ',';
-            } break;
-
-            case BS_DATA_FLOAT: {
-                uint32_t v = 0;
-                uint8_t dec = b[++i];
-                uint8_t size = 4;
-                while (size--) {
-                    v <<= 8;
-                    v |= b[++i];
-                }
-                s += *((float*)&v); // todo dec
-                s += ',';
-            } break;
-        }
-    }
-    if (s[s.length() - 1] == ',') s.remove(s.length() - 1);
-    return s;
-}
-```
-</details>
 <details>
 <summary>JavaScript</summary>
 
@@ -620,24 +544,16 @@ const codes = [
 export default function decodeBson(b) {
     if (!b || !(b instanceof Uint8Array) || !b.length) return null;
 
-    const BS_KEY_CODE = '$';
-    const BS_KEY_STR8 = 'k';
-    const BS_KEY_STR16 = 'K';
-
-    const BS_DATA_CODE = '#';
-    const BS_DATA_FLOAT = 'f';
-    const BS_DATA_STR8 = 's';
-    const BS_DATA_STR16 = 'S';
-
-    const BS_DATA_INT8 = '1';
-    const BS_DATA_INT16 = '2';
-    const BS_DATA_INT32 = '4';
-    const BS_DATA_INT64 = '8';
-
-    const BS_DATA_UINT8 = 'b';
-    const BS_DATA_UINT16 = 'c';
-    const BS_DATA_UINT32 = 'e';
-    const BS_DATA_UINT64 = 'i';
+    const BS_KEY_CODE = (0 << 5);
+    const BS_KEY_STR = (1 << 5);
+    const BS_VAL_CODE = (2 << 5);
+    const BS_VAL_STR = (3 << 5);
+    const BS_VAL_INT = (4 << 5);
+    const BS_VAL_FLOAT = (5 << 5);
+    const BS_CONT_OPEN = (6 << 5);
+    const BS_CONT_CLOSE = (7 << 5);
+    const BS_CONT_OBJ = (1);
+    const BS_CONT_ARR = (0);
 
     function ieee32ToFloat(intval) {
         var fval = 0.0;
@@ -663,102 +579,58 @@ export default function decodeBson(b) {
         }
         return fval;
     }
+    function unpack5(msb5, lsb) {
+        return ((msb5 << 8) | lsb) >>> 0;
+    }
 
     let s = '';
     for (let i = 0; i < b.length; i++) {
-        let c = String.fromCharCode(b[i]);
-        switch (c) {
-            case ']':
-            case '}':
+        const type = b[i] & 0b11100000;
+        const data = b[i] & 0b00011111;
+
+        switch (type) {
+            case BS_CONT_CLOSE:
                 if (s[s.length - 1] == ',') s = s.slice(0, -1);
-                s += c;
+                s += (data == BS_CONT_OBJ) ? '}' : ']';
                 s += ',';
                 break;
 
-            case '[':
-            case '{':
-                s += c;
+            case BS_CONT_OPEN:
+                s += (data == BS_CONT_OBJ) ? '{' : '[';
                 break;
 
-            case BS_DATA_CODE:
-            case BS_KEY_CODE: {
-                s += '"' + codes[b[++i]] + '"';
-                s += (c == BS_KEY_CODE) ? ':' : ',';
-            } break;
+            case BS_KEY_CODE:
+            case BS_VAL_CODE:
+                s += '"' + codes[unpack5(data, b[++i])] + '"';
+                s += (type == BS_KEY_CODE) ? ':' : ',';
+                break;
 
-            case BS_KEY_STR8:
-            case BS_DATA_STR8:
-            case BS_KEY_STR16:
-            case BS_DATA_STR16: {
-                let key = (c == BS_KEY_STR8 || c == BS_KEY_STR16);
-                let len = b[++i];
-                if (c == BS_KEY_STR16 || c == BS_DATA_STR16) {
-                    len <<= 8;
-                    len |= b[++i];
-                }
+            case BS_KEY_STR:
+            case BS_VAL_STR: {
+                let len = unpack5(data, b[++i]);
                 i++;
-                len = (len >>> 0);
-                s += '"';
-                s += new TextDecoder().decode(b.slice(i, i + len));
+                s += '"' + new TextDecoder().decode(b.slice(i, i + len)) + '"';
+                s += (type == BS_KEY_STR) ? ':' : ',';
                 i += len - 1;
-                s += '"';
-                s += key ? ':' : ',';
             } break;
 
-            case BS_DATA_INT8:
-            case BS_DATA_INT16:
-            case BS_DATA_INT32:
-            case BS_DATA_UINT8:
-            case BS_DATA_UINT16:
-            case BS_DATA_UINT32: {
-                let size = 0;
-                switch (c) {
-                    case BS_DATA_INT8:
-                    case BS_DATA_INT16:
-                    case BS_DATA_INT32:
-                        size = b[i] - '0'.charCodeAt(0);
-                        break;
-                    default:
-                        size = b[i] - 'a'.charCodeAt(0);
-                        break;
-                }
-                let v = 0;
-                while (size--) {
-                    v <<= 8;
-                    v |= b[++i];
-                }
-                switch (c) {
-                    case BS_DATA_INT8: s += (new Int8Array([v]))[0]; break;
-                    case BS_DATA_INT16: s += (new Int16Array([v]))[0]; break;
-                    case BS_DATA_INT32: s += (new Int32Array([v]))[0]; break;
-                    case BS_DATA_UINT8: s += (new Uint8Array([v]))[0]; break;
-                    case BS_DATA_UINT16: s += (new Uint16Array([v]))[0]; break;
-                    case BS_DATA_UINT32: s += (new Uint32Array([v]))[0]; break;
-                }
-                s += ',';
-            } break;
-
-            case BS_DATA_INT64:
-            case BS_DATA_UINT64:
-                let size = 8;
+            case BS_VAL_INT: {
+                if (data & 0b10000) s += '-';
+                let len = data & 0b01111;
                 let v = BigInt(0);
-                while (size--) {
-                    v <<= 8n;
-                    v |= BigInt(b[++i]);
+                for (let j = 0; j < len; j++) {
+                    v |= BigInt(b[++i]) << BigInt(j * 8);
                 }
-                s += '"' + v + '"';
+                s += v;
                 s += ',';
-                break;
+            } break;
 
-            case BS_DATA_FLOAT: {
+            case BS_VAL_FLOAT: {
                 let v = 0;
-                let dec = b[++i];
-                let size = 4;
-                while (size--) {
-                    v <<= 8;
-                    v |= b[++i];
+                for (let j = 0; j < 4; j++) {
+                    v |= b[++i] << (j * 8);
                 }
-                s += ieee32ToFloat(v).toFixed(dec);
+                s += ieee32ToFloat(v).toFixed(data);
                 s += ',';
             } break;
         }
