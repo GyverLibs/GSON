@@ -636,6 +636,9 @@ export default function decodeBson(b) {
         }
     }
     if (s[s.length - 1] == ',') s = s.slice(0, -1);
+    s = s.replaceAll(/\t/ig, "\\t")
+        .replaceAll(/\n/ig, "\\n")
+        .replaceAll(/\r/ig, "\\r");
     
     try {
         return JSON.parse(s);
