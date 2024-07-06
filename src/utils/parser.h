@@ -67,6 +67,11 @@ class Parser {
         return ents.hashed();
     }
 
+    // получить количество элементов в главном контейнере
+    uint16_t rootLength() const {
+        return length() ? gson::Entry(&ents, 0).length() : 0;
+    }
+
     // ===================== BY KEY =====================
 
     // доступ по ключу (главный контейнер - Object)

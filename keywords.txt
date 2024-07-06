@@ -43,6 +43,7 @@ readError	KEYWORD2
 setMaxDepth	KEYWORD2
 getByIndex	KEYWORD2
 getRaw	KEYWORD2
+rootLength	KEYWORD2
 
 # entry
 isContainer	KEYWORD2
