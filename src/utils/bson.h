@@ -34,20 +34,16 @@
 
 class BSON : private gtl::stack_uniq<uint8_t> {
    public:
+   using gtl::stack_uniq<uint8_t>::reserve;
+   using gtl::stack_uniq<uint8_t>::length;
+   using gtl::stack_uniq<uint8_t>::buf;
+
     operator Text() {
         return toText();
     }
 
     Text toText() {
-        return Text(buffer(), length());
-    }
-
-    const uint8_t* buffer() {
-        return gtl::stack_uniq<uint8_t>::buf();
-    }
-
-    size_t length() {
-        return gtl::stack_uniq<uint8_t>::length();
+        return Text(buf(), length());
     }
 
     // bson
