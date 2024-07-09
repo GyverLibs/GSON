@@ -333,83 +333,23 @@ class string : public Printable {
     }
 #endif
 
-    void operator=(const Value& value) {
-        addInt(value);
-    }
-    void operator+=(const Value& value) {
-        addInt(value);
-    }
+#define GSON_MAKE_ADD_INT(type)                   \
+    void operator=(type value) { addInt(value); } \
+    void operator+=(type value) { addInt(value); }
 
-    void operator=(const char& value) {
-        addInt(value);
-    }
-    void operator+=(const char& value) {
-        addInt(value);
-    }
-
-    void operator=(const unsigned char& value) {
-        addInt(value);
-    }
-    void operator+=(const unsigned char& value) {
-        addInt(value);
-    }
-
-    void operator=(const short& value) {
-        addInt(value);
-    }
-    void operator+=(const short& value) {
-        addInt(value);
-    }
-
-    void operator=(const unsigned short& value) {
-        addInt(value);
-    }
-    void operator+=(const unsigned short& value) {
-        addInt(value);
-    }
-
-    void operator=(const int& value) {
-        addInt(value);
-    }
-    void operator+=(const int& value) {
-        addInt(value);
-    }
-
-    void operator=(const unsigned int& value) {
-        addInt(value);
-    }
-    void operator+=(const unsigned int& value) {
-        addInt(value);
-    }
-
-    void operator=(const long& value) {
-        addInt(value);
-    }
-    void operator+=(const long& value) {
-        addInt(value);
-    }
-
-    void operator=(const unsigned long& value) {
-        addInt(value);
-    }
-    void operator+=(const unsigned long& value) {
-        addInt(value);
-    }
+    GSON_MAKE_ADD_INT(Value)
+    GSON_MAKE_ADD_INT(char)
+    GSON_MAKE_ADD_INT(unsigned char)
+    GSON_MAKE_ADD_INT(short)
+    GSON_MAKE_ADD_INT(unsigned short)
+    GSON_MAKE_ADD_INT(int)
+    GSON_MAKE_ADD_INT(unsigned int)
+    GSON_MAKE_ADD_INT(long)
+    GSON_MAKE_ADD_INT(unsigned long)
 
 #ifndef SUTIL_NO_VALUE
-    void operator=(const long long& value) {
-        addInt(value);
-    }
-    void operator+=(const long long& value) {
-        addInt(value);
-    }
-
-    void operator=(const unsigned long long& value) {
-        addInt(value);
-    }
-    void operator+=(const unsigned long long& value) {
-        addInt(value);
-    }
+    GSON_MAKE_ADD_INT(long long)
+    GSON_MAKE_ADD_INT(unsigned long long)
 #endif
     // =============== CONTAINER ===============
 

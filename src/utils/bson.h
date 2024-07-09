@@ -32,10 +32,51 @@
 #define BS_LSB5(x) (x & 0b00011111)
 #define BS_LSB(x) (x & 0xff)
 
-class BSON : public gtl::stack_uniq<uint8_t> {
+class BSON : private gtl::stack_uniq<uint8_t> {
    public:
     operator Text() {
-        return Text(_buf, _len);
+        return toText();
+    }
+
+    Text toText() {
+        return Text(buffer(), length());
+    }
+
+    const uint8_t* buffer() {
+        return gtl::stack_uniq<uint8_t>::buf();
+    }
+
+    size_t length() {
+        return gtl::stack_uniq<uint8_t>::length();
+    }
+
+    // bson
+    void add(const BSON& bson) {
+        concat(bson);
+    }
+    // void operator=(const BSON& bson) {
+    //     concat(bson);
+    // }
+    void operator+=(const BSON& bson) {
+        concat(bson);
+    }
+
+    // key
+    void addKey(uint16_t key) {
+        push(BS_KEY_CODE | (key & 0b000));
+        push(BS_LSB(key));
+    }
+    void addKey(const Text& key) {
+        _text(key, BS_KEY_STR);
+    }
+
+    BSON& operator[](uint16_t key) {
+        addKey(key);
+        return *this;
+    }
+    BSON& operator[](Text key) {
+        addKey(key);
+        return *this;
     }
 
     // code
@@ -44,7 +85,7 @@ class BSON : public gtl::stack_uniq<uint8_t> {
         addKey(key);
         addCode(val);
     }
-    void addCode(Text key, uint16_t val) {
+    void addCode(const Text& key, uint16_t val) {
         addKey(key);
         addCode(val);
     }
@@ -61,7 +102,7 @@ class BSON : public gtl::stack_uniq<uint8_t> {
         addKey(key);
         addUint(b);
     }
-    void addBool(Text key, bool b) {
+    void addBool(const Text& key, bool b) {
         addKey(key);
         addUint(b);
     }
@@ -73,7 +114,7 @@ class BSON : public gtl::stack_uniq<uint8_t> {
         push(BS_VAL_INT | len);
         concat((uint8_t*)&val, len);
     }
-    void addUint(uint64_t val) {
+    void addUint(unsigned long long val) {
         uint8_t len = _uint64Size(val);
         push(BS_VAL_INT | len);
         concat((uint8_t*)&val, len);
@@ -84,7 +125,7 @@ class BSON : public gtl::stack_uniq<uint8_t> {
         addUint(val);
     }
     template <typename T>
-    void addUint(Text key, T val) {
+    void addUint(const Text& key, T val) {
         addKey(key);
         addUint(val);
     }
@@ -98,7 +139,7 @@ class BSON : public gtl::stack_uniq<uint8_t> {
         push(BS_VAL_INT | neg | len);
         concat((uint8_t*)&val, len);
     }
-    void addInt(int64_t val) {
+    void addInt(long long val) {
         uint8_t neg = (val < 0) ? BS_NEGATIVE : 0;
         if (neg) val = -val;
         uint8_t len = _uint64Size(val);
@@ -111,7 +152,7 @@ class BSON : public gtl::stack_uniq<uint8_t> {
         addInt(val);
     }
     template <typename T>
-    void addInt(Text key, T val) {
+    void addInt(const Text& key, T val) {
         addKey(key);
         addInt(val);
     }
@@ -129,32 +170,61 @@ class BSON : public gtl::stack_uniq<uint8_t> {
         addFloat(value, dec);
     }
     template <typename T>
-    void addFloat(Text key, T value, uint8_t dec) {
+    void addFloat(const Text& key, T value, uint8_t dec) {
         addKey(key);
         addFloat(value, dec);
     }
 
+#define BSON_MAKE_ADD_STR(type)                \
+    void operator=(type val) { addText(val); } \
+    void operator+=(type val) { addText(val); }
+
+#define BSON_MAKE_ADD_INT(type)               \
+    void operator=(type val) { addInt(val); } \
+    void operator+=(type val) { addInt(val); }
+
+#define BSON_MAKE_ADD_UINT(type)               \
+    void operator=(type val) { addUint(val); } \
+    void operator+=(type val) { addUint(val); }
+
+#define BSON_MAKE_ADD_FLOAT(type)                  \
+    void operator=(type val) { addFloat(val, 4); } \
+    void operator+=(type val) { addFloat(val, 4); }
+
+    BSON_MAKE_ADD_STR(const char*)
+    BSON_MAKE_ADD_STR(const __FlashStringHelper*)
+    BSON_MAKE_ADD_STR(const String&)
+    BSON_MAKE_ADD_STR(const Text&)
+
+    BSON_MAKE_ADD_UINT(bool)
+    BSON_MAKE_ADD_UINT(char)
+    BSON_MAKE_ADD_UINT(unsigned char)
+    BSON_MAKE_ADD_UINT(unsigned short)
+    BSON_MAKE_ADD_UINT(unsigned int)
+    BSON_MAKE_ADD_UINT(unsigned long)
+    BSON_MAKE_ADD_UINT(unsigned long long)
+
+    BSON_MAKE_ADD_INT(signed char)
+    BSON_MAKE_ADD_INT(short)
+    BSON_MAKE_ADD_INT(int)
+    BSON_MAKE_ADD_INT(long)
+    BSON_MAKE_ADD_INT(long long)
+
+    BSON_MAKE_ADD_FLOAT(float)
+    BSON_MAKE_ADD_FLOAT(double)
+
     // text
-    void addText(Text text) {
+    void addText(const Text& text) {
         _text(text, BS_VAL_STR);
     }
-    void addText(uint16_t key, Text text) {
+    void addText(uint16_t key, const Text& text) {
         reserve(length() + text.length() + 5);
         addKey(key);
         _text(text, BS_VAL_STR);
     }
-    void addText(Text key, Text text) {
+    void addText(const Text& key, const Text& text) {
         addKey(key);
         _text(text, BS_VAL_STR);
-    }
-
-    // key
-    void addKey(uint16_t key) {
-        push(BS_KEY_CODE | (key & 0b000));
-        push(BS_LSB(key));
-    }
-    void addKey(Text key) {
-        _text(key, BS_KEY_STR);
     }
 
     // object
@@ -166,7 +236,7 @@ class BSON : public gtl::stack_uniq<uint8_t> {
         addKey(key);
         beginObj();
     }
-    void beginObj(Text key) {
+    void beginObj(const Text& key) {
         addKey(key);
         beginObj();
     }
@@ -183,7 +253,7 @@ class BSON : public gtl::stack_uniq<uint8_t> {
         addKey(key);
         beginArr();
     }
-    void beginArr(Text key) {
+    void beginArr(const Text& key) {
         addKey(key);
         beginArr();
     }
@@ -192,7 +262,7 @@ class BSON : public gtl::stack_uniq<uint8_t> {
     }
 
    private:
-    void _text(Text& text, uint8_t type) {
+    void _text(const Text& text, uint8_t type) {
         reserve(length() + text.length() + 3);
         push(type | BS_MSB5(text.length()));
         push(BS_LSB(text.length()));
@@ -200,13 +270,13 @@ class BSON : public gtl::stack_uniq<uint8_t> {
     }
     uint8_t _uintSize(uint32_t val) {
         switch (val) {
-            case 0 ... 0xff:
+            case 0ul ... 0xfful:
                 return 1;
-            case 0xff + 1 ... 0xffff:
+            case 0xfful + 1 ... 0xfffful:
                 return 2;
-            case 0xffff + 1 ... 0xffffff:
+            case 0xfffful + 1ul ... 0xfffffful:
                 return 3;
-            case 0xffffff + 1 ... 0xffffffff:
+            case 0xfffffful + 1ul ... 0xfffffffful:
                 return 4;
         }
         return 0;
