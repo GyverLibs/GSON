@@ -34,9 +34,27 @@
 
 class BSON : private gtl::stack_uniq<uint8_t> {
    public:
-   using gtl::stack_uniq<uint8_t>::reserve;
-   using gtl::stack_uniq<uint8_t>::length;
-   using gtl::stack_uniq<uint8_t>::buf;
+    using gtl::stack_uniq<uint8_t>::reserve;
+    using gtl::stack_uniq<uint8_t>::length;
+    using gtl::stack_uniq<uint8_t>::buf;
+    using gtl::stack_uniq<uint8_t>::clear;
+    using gtl::stack_uniq<uint8_t>::move;
+
+    BSON() {}
+    BSON(BSON& b) {
+        move(b);
+    }
+    BSON(BSON&& b) {
+        move(b);
+    }
+    BSON& operator=(BSON& b) {
+        move(b);
+        return *this;
+    }
+    BSON& operator=(BSON&& b) {
+        move(b);
+        return *this;
+    }
 
     operator Text() {
         return toText();
@@ -50,9 +68,6 @@ class BSON : private gtl::stack_uniq<uint8_t> {
     void add(const BSON& bson) {
         concat(bson);
     }
-    // void operator=(const BSON& bson) {
-    //     concat(bson);
-    // }
     void operator+=(const BSON& bson) {
         concat(bson);
     }
