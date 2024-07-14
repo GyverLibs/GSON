@@ -202,46 +202,26 @@ class Parser {
     // прочитать ошибку
     const __FlashStringHelper* readError() const {
         switch (error) {
-            case gson::Error::Alloc:
-                return F("Alloc");
-            case gson::Error::TooDeep:
-                return F("TooDeep");
-            case gson::Error::NoParent:
-                return F("NoParent");
-            case gson::Error::NotContainer:
-                return F("NotContainer");
-            case gson::Error::UnexComma:
-                return F("UnexComma");
-            case gson::Error::UnexColon:
-                return F("UnexColon");
-            case gson::Error::UnexToken:
-                return F("UnexToken");
-            case gson::Error::UnexQuotes:
-                return F("UnexQuotes");
-            case gson::Error::UnexOpen:
-                return F("UnexOpen");
-            case gson::Error::UnexClose:
-                return F("UnexClose");
-            case gson::Error::UnknownToken:
-                return F("UnknownToken");
-            case gson::Error::BrokenToken:
-                return F("BrokenToken");
-            case gson::Error::BrokenString:
-                return F("BrokenString");
-            case gson::Error::BrokenContainer:
-                return F("BrokenContainer");
-            case gson::Error::EmptyKey:
-                return F("EmptyKey");
-            case gson::Error::IndexOverflow:
-                return F("IndexOverflow");
-            case gson::Error::LongPacket:
-                return F("LongPacket");
-            case gson::Error::LongKey:
-                return F("LongKey");
-            case gson::Error::EmptyString:
-                return F("EmptyString");
-            default:
-                return F("None");
+            case gson::Error::Alloc: return F("Alloc");
+            case gson::Error::TooDeep: return F("TooDeep");
+            case gson::Error::NoParent: return F("NoParent");
+            case gson::Error::NotContainer: return F("NotContainer");
+            case gson::Error::UnexComma: return F("UnexComma");
+            case gson::Error::UnexColon: return F("UnexColon");
+            case gson::Error::UnexToken: return F("UnexToken");
+            case gson::Error::UnexQuotes: return F("UnexQuotes");
+            case gson::Error::UnexOpen: return F("UnexOpen");
+            case gson::Error::UnexClose: return F("UnexClose");
+            case gson::Error::UnknownToken: return F("UnknownToken");
+            case gson::Error::BrokenToken: return F("BrokenToken");
+            case gson::Error::BrokenString: return F("BrokenString");
+            case gson::Error::BrokenContainer: return F("BrokenContainer");
+            case gson::Error::EmptyKey: return F("EmptyKey");
+            case gson::Error::IndexOverflow: return F("IndexOverflow");
+            case gson::Error::LongPacket: return F("LongPacket");
+            case gson::Error::LongKey: return F("LongKey");
+            case gson::Error::EmptyString: return F("EmptyString");
+            default: return F("None");
         }
     }
 
