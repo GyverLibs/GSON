@@ -453,10 +453,8 @@ class Parser {
                 strF = 0;
                 strp++;
                 if (strp >= endp) return gson::Error::BrokenString;
-                if (*strp == '\"') {
-                    ebuf.val_offs = 0;
-                } else {
-                    ebuf.val_offs = strp - ents.str;
+                ebuf.val_offs = strp - ents.str;
+                if (*strp != '\"') {
                     while (1) {
                         strp = (char*)memchr((void*)(strp + 1), '\"', endp - strp - 1);
                         if (!strp) return gson::Error::BrokenString;
