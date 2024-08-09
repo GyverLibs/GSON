@@ -1,5 +1,4 @@
 #include <Arduino.h>
-
 #include <GSON.h>
 
 void setup() {

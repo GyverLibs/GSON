@@ -80,6 +80,10 @@ bool parse(const char* json, uint16_t len);
 // вывести в Print с форматированием
 void stringify(Print& p);
 
+// парсить в массив длины length()
+template <typename T>
+bool parseTo(T& arr);
+
 // обработка ошибок
 bool hasError();                        // есть ошибка парсинга
 Error getError();                       // получить ошибку
@@ -197,6 +201,10 @@ bool isContainer();         // элемент Array или Object
 bool isObject();            // элемент Object
 bool isArray();             // элемент Array
 parent_t index();           // индекс элемента в общем массиве парсера
+
+// парсить в массив длины length()
+template <typename T>
+bool parseTo(T& arr);
 ```
 
 ### `gson::string`

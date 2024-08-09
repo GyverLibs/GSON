@@ -112,6 +112,14 @@ class Parser {
         return get(index);
     }
 
+    // ===================== PARSE =====================
+
+    // парсить в массив длины rootLength()
+    template <typename T>
+    bool parseTo(T& arr) const {
+        return rootLength() ? gson::Entry(&ents, 0).parseTo(arr) : 0;
+    }
+
     // ===================== BY INDEX =====================
 
     // получить элемент по индексу в общем массиве парсера

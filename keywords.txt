@@ -20,6 +20,7 @@ GSON_NO_LIMITS	KEYWORD1
 #######################################
 
 # parser
+parseTo	KEYWORD2
 reset	KEYWORD2
 get	KEYWORD2
 valid	KEYWORD2

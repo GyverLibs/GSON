@@ -156,6 +156,16 @@ class Entry : public Text {
         pr.println();
     }
 
+    // парсить в массив длины length()
+    template <typename T>
+    bool parseTo(T& arr) const {
+        if (!isArray()) return false;
+        for (size_t i = 0; i < length(); i++) {
+            arr[i] = ens->valueText(idx + 1 + i);
+        }
+        return true;
+    }
+
     // индекс элемента в общем массиве парсера
     parent_t index() {
         return idx;
