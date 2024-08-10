@@ -532,14 +532,14 @@ void endArr();
 Пакет имеет следующую структуру:
 ```cpp
 /*
-0 key code: [code msb5] + [code8]
-1 key str: [len msb5] + [len8] + [...]
-2 val code: [code msb5] + [code8]
-3 val str: [len msb5] + [len8] + [...]
-4 val int: [sign1 + len4]
-5 val float: [dec5]
-6 open: [1obj / 0arr]
-7 close: [1obj / 0arr]
+0 key code: [code msb:5] + [code:8]
+1 key str: [len msb:5] + [len:8] + [...]
+2 val code: [code msb:5] + [code:8]
+3 val str: [len msb:5] + [len:8] + [...]
+4 val int: [sign:1 + len:4]
+5 val float: [dec:5]
+6 cont: [obj:1 / arr:0] [open:1 / close:0]
+7 bin: [len msb:5] + [len:8] + [...]
 */
 ```
 
@@ -554,9 +554,15 @@ const codes = [
     'constants',
 ];
 
-// @param b {Uint8Array}
-export default function decodeBson(b) {
-    if (!b || !(b instanceof Uint8Array) || !b.length) return null;
+/**
+ * @param {Uint8Array} b
+ * @param {Array} codes
+ * @returns {Object}
+ */
+export default function decodeBson(b, codes = []) {
+    if (!b || !(b instanceof Uint8Array)) return null;
+    if (!b.length) return {};
+    let bins = [];
 
     const BS_KEY_CODE = (0 << 5);
     const BS_KEY_STR = (1 << 5);
@@ -564,10 +570,12 @@ export default function decodeBson(b) {
     const BS_VAL_STR = (3 << 5);
     const BS_VAL_INT = (4 << 5);
     const BS_VAL_FLOAT = (5 << 5);
-    const BS_CONT_OPEN = (6 << 5);
-    const BS_CONT_CLOSE = (7 << 5);
-    const BS_CONT_OBJ = (1);
-    const BS_CONT_ARR = (0);
+    const BS_CONTAINER = (6 << 5);
+    const BS_BINARY = (7 << 5);
+    const BS_BIN_PREFIX = "__BSON_BINARY";
+
+    const BS_CONT_OBJ = (1 << 4);
+    const BS_CONT_OPEN = (1 << 3);
 
     function ieee32ToFloat(intval) {
         var fval = 0.0;
@@ -596,6 +604,16 @@ export default function decodeBson(b) {
     function unpack5(msb5, lsb) {
         return ((msb5 << 8) | lsb) >>> 0;
     }
+    function makeBins(obj) {
+        if (typeof obj !== 'object') return;
+        for (let k in obj) {
+            if (typeof obj[k] === "object" && obj[k] !== null) {
+                makeBins(obj[k]);
+            } else if (typeof obj[k] === "string" && obj[k].startsWith(BS_BIN_PREFIX)) {
+                obj[k] = bins[obj[k].split('#')[1]];
+            }
+        }
+    }
 
     let s = '';
     for (let i = 0; i < b.length; i++) {
@@ -603,14 +621,14 @@ export default function decodeBson(b) {
         const data = b[i] & 0b00011111;
 
         switch (type) {
-            case BS_CONT_CLOSE:
-                if (s[s.length - 1] == ',') s = s.slice(0, -1);
-                s += (data == BS_CONT_OBJ) ? '}' : ']';
-                s += ',';
-                break;
-
-            case BS_CONT_OPEN:
-                s += (data == BS_CONT_OBJ) ? '{' : '[';
+            case BS_CONTAINER:
+                if (data & BS_CONT_OPEN) {
+                    s += (data & BS_CONT_OBJ) ? '{' : '[';
+                } else {
+                    if (s[s.length - 1] == ',') s = s.slice(0, -1);
+                    s += (data & BS_CONT_OBJ) ? '}' : ']';
+                    s += ',';
+                }
                 break;
 
             case BS_KEY_CODE:
@@ -653,12 +671,22 @@ export default function decodeBson(b) {
                 s += ieee32ToFloat(v).toFixed(data);
                 s += ',';
             } break;
+
+            case BS_BINARY: {
+                let len = unpack5(data, b[++i]);
+                i++;
+                s += '"' + BS_BIN_PREFIX + '#' + bins.length + '",';
+                bins.push(b.slice(i, i + len));
+                i += len - 1;
+            } break;
         }
     }
     if (s[s.length - 1] == ',') s = s.slice(0, -1);
 
     try {
-        return JSON.parse(s);
+        let obj = JSON.parse(s);
+        makeBins(obj);
+        return obj;
     } catch (e) {
         throw new Error("JSON error")
     }
@@ -689,6 +717,7 @@ export default function decodeBson(b) {
 - v1.5.1 - добавлен сборщик бираного json (bson)
 - v1.5.2 - улучшен сборщик BSON, исправлен пример на JS
 - v1.5.7 - исправлен критический баг с парсингом пустого string значения
+- v1.5.9 - в BSON добавлена поддержка бинарных данных. Несовместимо с декодером предыдущей версии!
 
 <a id="install"></a>
 
