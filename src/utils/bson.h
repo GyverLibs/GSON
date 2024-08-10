@@ -16,7 +16,7 @@
 7 bin: [len msb:5] + [len:8] + [...]
 */
 
-#define BS_MAX_LEN (0b0001111111111111u)
+#define BS_MAX_LEN ((size_t)0b0001111111111111)
 
 #define BS_KEY_CODE (0 << 5)
 #define BS_KEY_STR (1 << 5)
@@ -303,11 +303,11 @@ class BSON : private gtl::stack_uniq<uint8_t> {
 
    private:
     void _text(const Text& text, uint8_t type) {
-        uint16_t len = min(text.length(), BS_MAX_LEN);
+        uint16_t len = min((size_t)text.length(), BS_MAX_LEN);
         reserve(length() + len + 3);
         push(type | BS_MSB5(len));
         push(BS_LSB(len));
-        concat((uint8_t*)text.str(), len, text.pgm());
+        concat((const uint8_t*)text.str(), len, text.pgm());
     }
     uint8_t _uintSize(uint32_t val) {
         switch (val) {
