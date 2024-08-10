@@ -16,7 +16,7 @@
 7 bin: [len msb:5] + [len:8] + [...]
 */
 
-#define BS_MAX_LEN (0b0001111111111111)
+#define BS_MAX_LEN (0b0001111111111111u)
 
 #define BS_KEY_CODE (0 << 5)
 #define BS_KEY_STR (1 << 5)
@@ -246,20 +246,25 @@ class BSON : private gtl::stack_uniq<uint8_t> {
 
     // bin
     void addBin(const void* data, size_t size) {
+        if (size > BS_MAX_LEN) return;
         beginBin(size);
         write((const uint8_t*)data, size);
     }
     void addBin(const Text& key, const void* data, size_t size) {
+        if (size > BS_MAX_LEN) return;
         addKey(key);
         addBin(data, size);
     }
     void addBin(uint16_t key, const void* data, size_t size) {
+        if (size > BS_MAX_LEN) return;
         addKey(key);
         addBin(data, size);
     }
-    void beginBin(uint16_t size) {
+    bool beginBin(uint16_t size) {
+        if (size > BS_MAX_LEN) return false;
         push(BS_BINARY | BS_MSB5(size));
         push(BS_LSB(size));
+        return true;
     }
 
     // object
@@ -298,10 +303,11 @@ class BSON : private gtl::stack_uniq<uint8_t> {
 
    private:
     void _text(const Text& text, uint8_t type) {
-        reserve(length() + text.length() + 3);
-        push(type | BS_MSB5(text.length()));
-        push(BS_LSB(text.length()));
-        concat((uint8_t*)text.str(), text.length(), text.pgm());
+        uint16_t len = min(text.length(), BS_MAX_LEN);
+        reserve(length() + len + 3);
+        push(type | BS_MSB5(len));
+        push(BS_LSB(len));
+        concat((uint8_t*)text.str(), len, text.pgm());
     }
     uint8_t _uintSize(uint32_t val) {
         switch (val) {
