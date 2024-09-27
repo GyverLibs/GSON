@@ -577,29 +577,8 @@ export default function decodeBson(b, codes = []) {
     const BS_CONT_OBJ = (1 << 4);
     const BS_CONT_OPEN = (1 << 3);
 
-    function ieee32ToFloat(intval) {
-        var fval = 0.0;
-        var x;
-        var m;
-        var s;
-        s = (intval & 0x80000000) ? -1 : 1;
-        x = ((intval >> 23) & 0xFF);
-        m = (intval & 0x7FFFFF);
-        switch (x) {
-            case 0:
-                break;
-            case 0xFF:
-                if (m) fval = NaN;
-                else if (s > 0) fval = Number.POSITIVE_INFINITY;
-                else fval = Number.NEGATIVE_INFINITY;
-                break;
-            default:
-                x -= 127;
-                m += 0x800000;
-                fval = s * (m / 8388608.0) * Math.pow(2, x);
-                break;
-        }
-        return fval;
+    function u32toFloat(u32) {
+        return new Float32Array(new Uint32Array([u32]).buffer)[0];
     }
     function unpack5(msb5, lsb) {
         return ((msb5 << 8) | lsb) >>> 0;
@@ -668,7 +647,7 @@ export default function decodeBson(b, codes = []) {
                 for (let j = 0; j < 4; j++) {
                     v |= b[++i] << (j * 8);
                 }
-                let f = ieee32ToFloat(v);
+                let f = u32toFloat(v);
                 if (isNaN(f)) {
                     s += '"NaN"';
                 } else if (!isFinite(f)) {
