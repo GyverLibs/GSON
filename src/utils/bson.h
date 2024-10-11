@@ -310,16 +310,10 @@ class BSON : private gtl::stack_uniq<uint8_t> {
         concat((const uint8_t*)text.str(), len, text.pgm());
     }
     uint8_t _uintSize(uint32_t val) {
-        switch (val) {
-            case 0ul ... 0xfful:
-                return 1;
-            case 0xfful + 1 ... 0xfffful:
-                return 2;
-            case 0xfffful + 1ul ... 0xfffffful:
-                return 3;
-            case 0xfffffful + 1ul ... 0xfffffffful:
-                return 4;
-        }
+        if (((uint8_t*)&val)[3]) return 4;
+        if (((uint8_t*)&val)[2]) return 3;
+        if (((uint8_t*)&val)[1]) return 2;
+        if (((uint8_t*)&val)[0]) return 1;
         return 0;
     }
     uint8_t _uint64Size(uint64_t val) {
