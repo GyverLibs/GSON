@@ -13,6 +13,11 @@ class Entry : public Text {
         if (_valid()) *((Text*)this) = ens->valueText(idx);
     }
 
+    size_t printTo(Print& p) const {
+        if (isContainer()) return stringify(p), 1;
+        else return Text::printTo(p);
+    }
+
     // ===================== BY KEY =====================
 
     // получить элемент по ключу
@@ -171,6 +176,11 @@ class Entry : public Text {
         return idx;
     }
 
+    // проверить коллизии хэшей в объектe
+    bool checkCollisions(bool recursive = true) const {
+        return (isObject() && ens->hashed()) ? _checkCollisions(*this, recursive) : 0;
+    }
+
     // ===========================
     bool includes(size_t hash) const __attribute__((deprecated)) {
         return has(hash);
@@ -250,6 +260,18 @@ class Entry : public Text {
                 idx++;
             }
         }
+    }
+
+    static bool _checkCollisions(const Entry& ent, bool recursive) {
+        int16_t len = ent.length();
+        for (int16_t i = 0; i < len; i++) {
+            Entry e = ent.get(i);
+            for (int16_t j = i + 1; j < len; j++) {
+                if (e.keyHash() == ent.get(j).keyHash()) return 1;
+            }
+            if (recursive && e.isObject() && _checkCollisions(e, true)) return 1;
+        }
+        return 0;
     }
 };
 

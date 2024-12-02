@@ -62,6 +62,11 @@ class Parser {
         ents.hashKeys();
     }
 
+    // проверить коллизии хэшей в объектах
+    bool checkCollisions(bool recursive = true) const {
+        return length() ? gson::Entry(&ents, 0).checkCollisions(recursive) : false;
+    }
+
     // проверка были ли хешированы ключи
     bool hashed() const {
         return ents.hashed();
@@ -292,7 +297,7 @@ class Parser {
         ebuf = gsutil::Entry_t();
         ents.clear();
 
-        if (strp[0] == '{' || strp[0] == '[') {
+        if ((strp[0] == '{' && strp[length - 1] == '}') || (strp[0] == '[' && strp[length - 1] == ']')) {
             ents.reserve(_count(json, length));
             error = _parse(0);
             ents[0].parent = GSON_MAX_INDEX;
