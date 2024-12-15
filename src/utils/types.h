@@ -11,6 +11,7 @@ enum class Type : uint8_t {
     Int,
     Float,
     Bool,
+    Null,
 };
 
 enum class Error : uint8_t {

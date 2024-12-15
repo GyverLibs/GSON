@@ -174,6 +174,8 @@ class Parser {
                 return F("Float");
             case gson::Type::Bool:
                 return F("Bool");
+            case gson::Type::Null:
+                return F("Null");                 
             default:
                 return F("None");
         }
