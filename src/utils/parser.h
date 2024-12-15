@@ -422,6 +422,9 @@ class Parser {
                         case '0' ... '9':
                             ebuf.type = gson::Type::Int;
                             break;
+                        case 'n':
+                            ebuf.type = gson::Type::Null;
+                            break;
                         default:
                             return gson::Error::UnknownToken;
                     }
