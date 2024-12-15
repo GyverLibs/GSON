@@ -455,6 +455,11 @@ class Parser {
                             return gson::Error::BrokenToken;
                         }
                     }
+                    if (ebuf.is(gson::Type::Null)) {
+                        if (!(ebuf.val_len == 4 && !strncmp_P(ebuf.value(ents.str), PSTR("null"), 4))){
+                            return gson::Error::BrokenToken;
+                        }
+                    }
                     if (length() == GSON_MAX_INDEX - 1) return gson::Error::IndexOverflow;
                     ebuf.parent = parent;
                     if (!ents.push(ebuf)) return gson::Error::Alloc;
