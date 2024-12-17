@@ -222,6 +222,9 @@ class Entry : public Text {
             case gson::Type::Bool:
                 p.print((ens->valueText(idx)[0] == 't') ? F("true") : F("false"));
                 break;
+            case gson::Type::Null:
+                p.print(F("null"));
+                break;
             default:
                 break;
         }

@@ -174,6 +174,8 @@ class Parser {
                 return F("Float");
             case gson::Type::Bool:
                 return F("Bool");
+            case gson::Type::Null:
+                return F("Null");                 
             default:
                 return F("None");
         }
@@ -420,6 +422,9 @@ class Parser {
                         case '0' ... '9':
                             ebuf.type = gson::Type::Int;
                             break;
+                        case 'n':
+                            ebuf.type = gson::Type::Null;
+                            break;
                         default:
                             return gson::Error::UnknownToken;
                     }
@@ -450,6 +455,11 @@ class Parser {
                     if (ebuf.is(gson::Type::Bool)) {
                         if (!(ebuf.val_len == 4 && !strncmp_P(ebuf.value(ents.str), PSTR("true"), 4)) &&
                             !(ebuf.val_len == 5 && !strncmp_P(ebuf.value(ents.str), PSTR("false"), 5))) {
+                            return gson::Error::BrokenToken;
+                        }
+                    }
+                    if (ebuf.is(gson::Type::Null)) {
+                        if (!(ebuf.val_len == 4 && !strncmp_P(ebuf.value(ents.str), PSTR("null"), 4))){
                             return gson::Error::BrokenToken;
                         }
                     }
