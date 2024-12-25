@@ -4,6 +4,7 @@
 #include <StringUtils.h>
 #include <limits.h>
 
+// библиотека устарела и переехала в отдельный репозиторий https://github.com/GyverLibs/BSON
 // бинарный JSON, может распаковываться в обычный. Структура данных:
 /*
 0 key code: [code msb:5] + [code:8]
