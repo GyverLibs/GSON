@@ -331,6 +331,9 @@ bool b = p["flag"].toBool();   // bool
 Serial.println(p["arr"][0]);   // hello
 Serial.println(p["arr"][1]);   // true
 
+char buf[10];
+p["key"].toStr(buf, 10);    // вывод во внешний char-буфер
+
 // проверка типа
 p["arr"].type() == gson::Type::Array;
 
