@@ -181,6 +181,10 @@ class Entry : public Text {
         return (isObject() && ens->hashed()) ? _checkCollisions(*this, recursive) : 0;
     }
 
+    void reset() {
+        ens = nullptr;
+    }
+
     // ===========================
     bool includes(size_t hash) const __attribute__((deprecated)) {
         return has(hash);

@@ -5,10 +5,10 @@
 #include "entry_t.h"
 
 namespace gsutil {
-class EntryStack : public gtl::stack_uniq<Entry_t> {
-   public:
-    EntryStack() : gtl::stack_uniq<Entry_t>() {}
+class EntryStack : public gtl::stack<Entry_t> {
+    typedef gtl::stack<Entry_t> ST;
 
+   public:
     void hashKeys() {
         if (valid() && hash.resize(length())) {
             for (uint16_t i = 0; i < length(); i++) {
@@ -25,13 +25,13 @@ class EntryStack : public gtl::stack_uniq<Entry_t> {
     // освободить память
     void reset() {
         hash.reset();
-        gtl::stack_uniq<Entry_t>::reset();
+        ST::reset();
     }
 
     // очистить буфер для следующего парсинга
     void clear() {
         hash.reset();
-        gtl::stack_uniq<Entry_t>::clear();
+        ST::clear();
     }
 
     inline Text keyText(int idx) const {
@@ -46,20 +46,11 @@ class EntryStack : public gtl::stack_uniq<Entry_t> {
 
     // буфер и строка существуют
     bool valid() const {
-        return gtl::stack_uniq<Entry_t>::valid() && str;
-    }
-
-    void move(EntryStack& es) noexcept {
-        if (this == &es) return;
-        gtl::stack_uniq<Entry_t>::move(es);
-        hash.move(es.hash);
-        str = es.str;
+        return ST::valid() && str;
     }
 
     const char* str = nullptr;
-    gtl::array_uniq<size_t> hash;
-
-   private:
+    gtl::array<size_t> hash;
 };
 
 }  // namespace gsutil

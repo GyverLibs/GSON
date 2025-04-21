@@ -175,7 +175,7 @@ class Parser {
             case gson::Type::Bool:
                 return F("Bool");
             case gson::Type::Null:
-                return F("Null");                 
+                return F("Null");
             default:
                 return F("None");
         }
@@ -238,36 +238,6 @@ class Parser {
             case gson::Error::EmptyString: return F("EmptyString");
             default: return F("None");
         }
-    }
-
-    Parser(Parser& p) {
-        move(p);
-    }
-    Parser& operator=(Parser& p) {
-        move(p);
-        return *this;
-    }
-
-#if __cplusplus >= 201103L
-    Parser(Parser&& p) noexcept {
-        move(p);
-    }
-    Parser& operator=(Parser&& p) noexcept {
-        move(p);
-        return *this;
-    }
-#endif
-
-    void move(Parser& p) {
-        if (this == &p) return;
-        ents.move(p.ents);
-        strp = p.strp;
-        error = p.error;
-        state = p.state;
-        strF = p.strF;
-        ebuf = p.ebuf;
-        depth = p.depth;
-        endp = p.endp;
     }
 
     // ============ PRIVATE ============
@@ -459,7 +429,7 @@ class Parser {
                         }
                     }
                     if (ebuf.is(gson::Type::Null)) {
-                        if (!(ebuf.val_len == 4 && !strncmp_P(ebuf.value(ents.str), PSTR("null"), 4))){
+                        if (!(ebuf.val_len == 4 && !strncmp_P(ebuf.value(ents.str), PSTR("null"), 4))) {
                             return gson::Error::BrokenToken;
                         }
                     }
