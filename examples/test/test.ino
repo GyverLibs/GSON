@@ -5,29 +5,52 @@ void setup() {
     Serial.begin(115200);
     Serial.println();
 
-    gson::string gs;                   // создать строку
-    gs.beginObj();                     // начать объект
-    gs.addString("str1", F("value"));  // добавить строковое значение
-    gs["str2"] = "value2";             // так тоже можно
-    gs["int"] = (int32_t)12345;        // целочисленное
-    gs.beginObj("obj");                // вложенный объект
-    gs.addFloat(F("float"), 3.14);     // float
-    gs["float2"] = 3.14;               // или так
-    gs["bool"] = false;                // Bool значение
-    gs.endObj();                       // завершить объект
+    // gson::string gs;                   // создать строку
+    // gs.beginObj();                     // начать объект
+    // gs.addString("str1", F("value"));  // добавить строковое значение
+    // gs["str2"] = "value2";             // так тоже можно
+    // gs["int"] = (int32_t)12345;        // целочисленное
+    // gs.beginObj("obj");                // вложенный объект
+    // gs.addFloat(F("float"), 3.14);     // float
+    // gs["float2"] = 3.14;               // или так
+    // gs["bool"] = false;                // Bool значение
+    // gs.endObj();                       // завершить объект
 
-    gs.beginObj("obj2");
-    gs.beginArr("array");
-    gs.addFloat(3.14);
+    // gs.beginObj("obj2");
+    // gs.beginArr("array");
+    // gs.addFloat(3.14);
+    // gs += "text";  // в массиве можно так
+    // gs += 12345;
+    // gs += true;
+    // gs.endArr();
+    // gs.endObj();
+    // gs["last"] = "kekpek";
+
+    // gs.endObj();  // завершить объект
+    // gs.end();     // завершить пакет
+
+    gson::Str gs;                // создать строку
+    gs('{');                     // начать объект
+    gs["str1"] = F("value");     // добавить строковое значение
+    gs["str2"] = "value2";       // так тоже можно
+    gs["int"] = (int32_t)12345;  // целочисленное
+    gs["obj"]('{');              // вложенный объект
+    gs[F("float")] = 3.14;       // float
+    gs["float2"] = 3.14;         // или так
+    gs["bool"] = false;          // Bool значение
+    gs('}');                     // завершить объект
+
+    gs["obj2"]('{');
+    gs["array"]('[');
+    gs.add(3.14, 1);
     gs += "text";  // в массиве можно так
     gs += 12345;
     gs += true;
-    gs.endArr();
-    gs.endObj();
+    gs(']');
+    gs('}');
     gs["last"] = "kekpek";
 
-    gs.endObj();  // завершить объект
-    gs.end();     // завершить пакет
+    gs('}');  // завершить объект
 
     Serial.println("==== PACKET ====");
     Serial.println(gs);
@@ -51,8 +74,8 @@ void setup() {
 
     p.hashKeys();
     Serial.println("==== HASH ACCESS ====");
-    Serial.println(p[su::SH("str2")]);
-    Serial.println(p[su::SH("obj")][su::SH("float")]);
+    Serial.println(p[SH("str2")]);
+    Serial.println(p[SH("obj")][SH("float")]);
     Serial.println();
 
     Serial.println("==== CHUNKS ====");
@@ -75,15 +98,15 @@ void setup() {
     Serial.println();
 
     Serial.println("==== STRINGIFY ====");
-    p[su::SH("obj2")].stringify(Serial);
+    p[SH("obj2")].stringify(Serial);
     Serial.println();
 
     Serial.println("==== STRINGIFY ====");
-    p[su::SH("obj")][su::SH("float2")].stringify(Serial);
+    p[SH("obj")][SH("float2")].stringify(Serial);
     Serial.println();
 
     Serial.println("==== STRINGIFY ====");
-    p[su::SH("int")].stringify(Serial);
+    p[SH("int")].stringify(Serial);
     Serial.println();
 }
 

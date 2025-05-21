@@ -22,10 +22,10 @@ class Entry : public Text {
 
     // получить элемент по ключу
     Entry get(const Text& key) const {
-        if (_valid() && ens->get(idx).isObject()) {
+        if (_valid() && ens->_get(idx).isObject()) {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
-                if (ens->get(i).parent == idx &&
-                    ens->get(i).key_offs &&
+                if (ens->_get(i).parent == idx &&
+                    ens->_get(i).key_offs &&
                     key.compare(ens->keyText(i))) return Entry(ens, i);
             }
         }
@@ -55,9 +55,9 @@ class Entry : public Text {
 
     // получить элемент по хэшу ключа
     Entry get(size_t hash) const {
-        if (_valid() && ens->hashed() && ens->get(idx).isObject()) {
+        if (_valid() && ens->hashed() && ens->_get(idx).isObject()) {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
-                if (ens->get(i).parent == idx && ens->hash[i] == hash) return Entry(ens, i);
+                if (ens->_get(i).parent == idx && ens->hash[i] == hash) return Entry(ens, i);
             }
         }
         return Entry();
@@ -77,15 +77,24 @@ class Entry : public Text {
 
     // получить элемент по индексу
     Entry get(int index) const {
-        if (_valid() && (size_t)index < ens->length() && ens->get(idx).isContainer()) {
+        if (_valid() && (size_t)index < ens->length() && ens->_get(idx).isContainer()) {
             for (uint16_t i = idx + 1; i < ens->length(); i++) {
-                if (ens->get(i).parent == idx) {
+                if (ens->_get(i).parent == idx) {
                     if (!index) return Entry(ens, i);
-                    index--;
+                    --index;
                 }
             }
         }
         return Entry();
+    }
+
+    // итерация по вложенным
+    void loop(void (*cb)(Entry e)) {
+        if (_valid() && ens->_get(idx).isContainer()) {
+            for (uint16_t i = idx + 1; i < ens->length(); i++) {
+                if (ens->_get(i).parent == idx) cb(Entry(ens, i));
+            }
+        }
     }
 
     // доступ по индексу (контейнер - Array или Object)
@@ -95,6 +104,12 @@ class Entry : public Text {
 
     // ===================== MISC =====================
 
+    // декодировать UCN (unicode) в записи
+    void decodeUCN() {
+        gsutil::Entry_t& e = ens->_get(idx);
+        e.val_len = su::unicode::decodeSelf((char*)e.value(ens->str), e.val_len);
+    }
+
     // получить ключ
     Text key() const {
         return _valid() ? ens->keyText(idx) : Text();
@@ -102,7 +117,11 @@ class Entry : public Text {
 
     // получить хэш ключа
     size_t keyHash() const {
-        return _valid() ? (ens->hashed() ? ens->hash[idx] : ens->keyText(idx).hash()) : false;
+        return _valid() ? (ens->hashed() ? ens->hash[idx] : ens->keyText(idx).hash()) : 0;
+    }
+    // без проверок
+    size_t _keyHash() const {
+        return ens->hash[idx];
     }
 
     // получить значение
@@ -112,49 +131,49 @@ class Entry : public Text {
 
     // получить размер для объектов и массивов
     size_t length() const {
-        if (!_valid() || !ens->get(idx).isContainer()) return 0;
+        if (!_valid() || !ens->_get(idx).isContainer()) return 0;
         size_t len = 0;
         for (size_t i = 0; i < ens->length(); i++) {
-            if (ens->get(i).parent == idx) len++;
+            if (ens->_get(i).parent == idx) len++;
         }
         return len;
     }
 
     // получить тип элемента
     gson::Type type() const {
-        return _valid() ? ens->get(idx).type : gson::Type::None;
+        return _valid() ? ens->_get(idx).type : gson::Type::None;
     }
 
     // сравнить тип элемента
     bool is(gson::Type type) const {
-        return _valid() ? ens->get(idx).type == type : false;
+        return _valid() ? ens->_get(idx).type == type : false;
     }
 
     // элемент Array или Object
     bool isContainer() const {
-        return _valid() ? ens->get(idx).isContainer() : false;
+        return _valid() ? ens->_get(idx).isContainer() : false;
     }
 
     // элемент Object
     bool isObject() const {
-        return _valid() ? ens->get(idx).isObject() : false;
+        return _valid() ? ens->_get(idx).isObject() : false;
     }
 
     // элемент Array
     bool isArray() const {
-        return _valid() ? ens->get(idx).isArray() : false;
+        return _valid() ? ens->_get(idx).isArray() : false;
     }
 
     // вывести в Print с форматированием
     void stringify(Print& pr) const {
         if (!_valid()) return;
-        if (ens->get(idx).isContainer()) {
+        if (ens->_get(idx).isContainer()) {
             uint8_t depth = 1;
             parent_t index = idx + 1;
-            pr.println(ens->get(idx).isObject() ? '{' : '[');
-            _stringify(pr, index, ens->get(index).parent, depth);
+            pr.println(ens->_get(idx).isObject() ? '{' : '[');
+            _stringify(pr, index, ens->_get(index).parent, depth);
             pr.println();
-            pr.print(ens->get(idx).isObject() ? '}' : ']');
+            pr.print(ens->_get(idx).isObject() ? '}' : ']');
         } else {
             _print(pr, idx);
         }
@@ -210,7 +229,7 @@ class Entry : public Text {
     }
 
     void _print(Print& p, parent_t idx) const {
-        gsutil::Entry_t& ent = ens->get(idx);
+        gsutil::Entry_t& ent = ens->_get(idx);
         if (ent.key_offs) {
             p.print('\"');
             p.print(ens->keyText(idx));
@@ -238,7 +257,7 @@ class Entry : public Text {
     void _stringify(Print& p, parent_t& idx, parent_t parent, uint8_t& depth) const {
         bool first = true;
         while (idx < ens->length()) {
-            gsutil::Entry_t& ent = ens->get(idx);
+            gsutil::Entry_t& ent = ens->_get(idx);
             if (ent.parent != parent) return;
 
             if (first) first = false;
@@ -254,17 +273,17 @@ class Entry : public Text {
                 p.print((ent.isArray()) ? '[' : '{');
                 p.print('\n');
                 parent_t prev = idx;
-                idx++;
-                depth++;
+                ++idx;
+                ++depth;
                 _stringify(p, idx, prev, depth);
-                depth--;
+                --depth;
                 p.print('\n');
                 _printTab(p, depth);
                 p.print((ent.isArray()) ? ']' : '}');
             } else {
                 _printTab(p, depth);
                 _print(p, idx);
-                idx++;
+                ++idx;
             }
         }
     }

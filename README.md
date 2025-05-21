@@ -55,15 +55,14 @@ bool hashed();                  // проверка были ли хеширов
 void reset();                   // освободить память
 uint16_t rootLength();          // получить количество элементов в главном контейнере
 
-void move(Parser& p);
-
 // установить максимальную глубину вложенности парсинга (умолч. 16)
 void setMaxDepth(uint8_t maxdepth);
 
 Entry get(Text key);            // доступ по ключу (главный контейнер - Object)
 Entry get(size_t hash);         // доступ по хэшу ключа (главный контейнер - Object)
-Entry get(int index);           // доступ по индексу (главный контейнер - Array или Object)
-Entry getByIndex(parent_t index);   // получить элемент по индексу в общем массиве парсера
+Entry get(int index);           // доступ по индексу (главный контейнер - Array или Object) (rootLength())
+
+Entry getByIndex(parent_t index);   // получить элемент по индексу в общем массиве парсера (length())
 
 Text key(int idx);              // прочитать ключ по индексу
 size_t keyHash(int idx);        // прочитать хэш ключа по индексу
@@ -208,66 +207,41 @@ template <typename T>
 bool parseTo(T& arr);
 ```
 
-### `gson::string`
+### `gson::Str`
+Новый инструмент взамен `gson::string` - в 2 раза быстрее и проще.
+
 ```cpp
-String s;                   // доступ к строке
-void clear();               // очистить строку
-bool reserve(uint16_t res); // зарезервировать строку
+// доступ к буферу
+char* buf();
 
-// делать escape символов при прибавлении через оператор = (умолч. вкл, true)
-void escapeDefault(bool esc);
+// очистить
+void clear();
 
-// прибавить gson::string. Будет добавлена запятая
-string& add(string& str);
+// прибавить данные любого типа напрямую
+void concat(T val);
 
-// добавить ключ (строка любого типа)
-string& addKey(Text key);
+// длина
+uint16_t length();
 
-// прибавить текст (строка любого типа) без кавычек
-string& addText(Text key, Text txt);
-string& addText(Text txt);
-string& addTextRaw(Text txt); // без запятой
+// зарезервировать
+bool reserve(uint16_t len);
 
-// прибавить текст (строка любого типа) без кавычек с escape символов
-string& addTextEsc(Text key, Text txt);
-string& addTextEsc(Text txt);
-string& addTextRawEsc(Text txt); // без запятой
+// прибавить любые данные как JSON значение
+// (целые, float, char, nullptr, любые строки)
+operator=(T val);
+operator+=(T val);
 
-// добавить строку (строка любого типа)
-string& addString(Text key, Text value);
-string& addString(Text value);
-string& addStringRaw(Text value);   // без запятой
+// добавить float с кол-вом знаков
+void add(float val, uint8_t dec = 2);
 
-// добавить строку (строка любого типа) с escape символов
-string& addStringEsc(Text key, Text value);
-string& addStringEsc(Text value);
-string& addStringRawEsc(Text value);   // без запятой
+// прибавить строку с escape
+void escape(const Text& txt);
 
-// добавить bool
-string& addBool(Text key, const bool& value);
-string& addBool(const bool& value);
-string& addBoolRaw(const bool& value);   // без запятой
+// ключ для объекта, строка любого типа
+Str& operator[](T str);
 
-// добавить float
-string& addFloat(Text key, const double& value, uint8_t dec = 2);
-string& addFloat(const double& value, uint8_t dec = 2);
-string& addFloatRaw(const double& value, uint8_t dec = 2);   // без запятой
-
-// добавить int
-string& addInt(Text key, const Value& value);
-string& addInt(const Value& value);
-string& addIntRaw(const Value& value);   // без запятой
-
-string& beginObj(Text key = "");    // начать объект
-string& endObj(bool last = false);  // завершить объект. last - не добавлять запятую
-
-string& beginArr(Text key = "");    // начать массив
-string& endArr(bool last = false);  // завершить массив. last - не добавлять запятую
-
-string& end();                      // завершить пакет (убрать запятую)
-
-// заменить последнюю запятую символом. Если символ '\0' - удалить запятую. Если это не запятая - добавить символ
-void replaceComma(char sym);
+// контейнер, всегда вернёт true. Тип {, }, [, ]
+Str& operator()(char type);
 ```
 
 <a id="usage"></a>
@@ -320,10 +294,11 @@ for (uint16_t i = 0; i < p.length(); i++) {
 Значения можно получать в типе `Text`, который может конвертироваться в другие типы и выводиться в порт:
 - Ключом может быть строка в любом виде (`"строка"`, `F("строка")`)
 - Можно обращаться ко вложенным объектам по ключу, а к массивам по индексу
+- Документацию на `Text` смотри [здесь](https://github.com/GyverLibs/StringUtils)
 
 ```cpp
-Serial.println(p["key"]);      // value
-Serial.println(p[F("int")]);   // 12345
+Serial.println(p["key"]);      // печать value
+Serial.println(p[F("int")]);   // печать 12345
 int val = p["int"].toInt16();  // конвертация в указанный тип
 val = p["int"];                // авто конвертация
 float f = p["obj"]["float"];   // вложенный объект
@@ -355,13 +330,22 @@ Serial.println(p[1][0]);  // abc
 Serial.println(p[1][1]);  // def
 ```
 
-> `Text` автоматически конвертируется во все типы, кроме `bool`. Используй `toBool()`. Преобразование к bool показывает существование элемента, можно использовать вместо `has`
+### bool
+`Text` автоматически конвертируется во все типы, кроме `bool`, используй `toBool()`. Преобразование к bool показывает существование элемента, это можно использовать вместо `has()`:
 
 ```cpp
-if (p["foo"]) {
-}
+if (p["foo"]) {}            // если существует
+if (p["foo"].toBool()) {}   // если существует и true
 ```
 
+Сравнение с `bool` работает более корректно: если элемент не существует - результат всегда будет `false`:
+
+```cpp
+if (p["foo"] == true) {}    // если существует и true
+if (p["foo"] == false) {}   // если существует и false
+```
+
+### Вывод в Entry
 Каждый элемент можно вывести в тип `gson::Entry` по имени (из объекта) или индексу (из массива) и использовать отдельно, чтобы не "искать" его заново:
 ```cpp
 gson::Entry e = p["arr"];
@@ -403,66 +387,48 @@ for (int i = 0; i < arr.length(); i++) {    // счётчик int!
 
 > Хеширование создаёт в памяти массив размером `колво_элементов * 4`
 
-### Передача парсера
-Все динамические данные внутри парсера ведут себя как уникальные, т.е. не дублируются в памяти, также имеется метод `move`. Если нужно создать парсер внутри своего класса, то для корректной работы нужно реализовать move семантику, чтобы объект мог переходить к другим объектам:
+### Сборка
+JSON строка собирается **линейно**, что очень просто и приятно для МК:
+
 ```cpp
-class MyClass {
-    public:
-    const char* str;
-    Parser parser;
+gson::Str j;
 
-    MyClass(MyClass& p) {
-        move(p);
-    }
-    MyClass& operator=(MyClass& p) {
-        move(p);
-        return *this;
+j('{'); // начать объект
+
+if (j["obj"]('{')) {    // объект с ключом. if для визуального отделения контейнера
+    j["int"] = 123;
+    j["float"] = 3.1415;
+    j["float2"].add(3.1415, 4);
+    j["null"] = nullptr;
+    j["cstr"] = "cstr";
+    j[F("fstr")] = F("fstr");
+    j[String("str")] = String("str");
+    j["esc"].escape(R"("he	ll\o world")");
+
+    j('}');
+}
+if (j["arr"]('[')) {
+    j += true;
+    j += NAN;
+    j += INFINITY;
+    j += nullptr;
+
+    if (j('[')) {
+        j += 12345;
+        j += 1234567L;
+        j += 123456787654LL;
+        j(']');
     }
 
-#if __cplusplus >= 201103L
-    MyClass(MyClass&& p) noexcept {
-        move(p);
-    }
-    MyClass& operator=(MyClass&& p) noexcept {
-        move(p);
-        return *this;
-    }
-#endif
+    j(']');
+}
+j('}');
 
-    void move(MyClass& p) noexcept {
-        parser.move(p.parser);
-        str = p.str;
-    }
-};
+Serial.println(j);
 ```
 
-### Сборка
-JSON строка собирается **линейно** в обычную `String`-строку, что очень просто и приятно для микроконтроллера:
-```cpp
-gson::string gs;                 // создать строку
-gs.beginObj();                   // начать объект 1
-gs.addString("str1", F("value"));// добавить строковое значение
-gs["str2"] = "value2";           // так тоже можно
-gs["int"] = 12345;               // целочисленное
-gs.beginObj("obj");              // вложенный объект 2
-gs.addFloat(F("float"), 3.14);   // float
-gs["float2"] = 3.14;             // или так
-gs["bool"] = false;              // Bool значение
-gs.endObj();                     // завершить объект 2
-
-gs.beginArr("array");            // начать массив
-gs.addFloat(3.14);               // в массив - без ключа
-gs += "text";                    // добавить значение (в данном случае в массив)
-gs += 12345;                     // добавить значение (в данном случае в массив)
-gs += true;                      // добавить значение (в данном случае в массив)
-gs.endArr();                     // завершить массив
-
-gs.endObj();                     // завершить объект 1
-
-gs.end();                        // ЗАВЕРШИТЬ ПАКЕТ (обязательно вызывается в конце)
-
-Serial.println(gs);              // вывод в порт
-Serial.println(gs.s);            // вывод в порт (или так)
+```json
+{"obj":{"int":123,"float":3.14,"float2":3.1415,"null":null,"cstr":"cstr","fstr":"fstr","str":"str","esc":"\"he\tll\\o world\""},"arr":[true,null,null,null,[12345,1234567,123456787654]]}
 ```
 
 <a id="versions"></a>

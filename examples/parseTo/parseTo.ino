@@ -5,7 +5,7 @@ void setup() {
     gson::Parser p;
     p.parse("[1,2,3]");
     p.stringify(Serial);
-    
+
     int arr[3];
     p.parseTo(arr);
     Serial.println(arr[0]);

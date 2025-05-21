@@ -32,14 +32,14 @@ class Parser {
     void reset() {
         ents.reset();
         strp = nullptr;
-        error = gson::Error::None;
+        error = Error::None;
     }
 
     // очистить для нового парсинга
     void clear() {
         ents.clear();
         strp = nullptr;
-        error = gson::Error::None;
+        error = Error::None;
     }
 
     // получить количество элементов
@@ -64,7 +64,7 @@ class Parser {
 
     // проверить коллизии хэшей в объектах
     bool checkCollisions(bool recursive = true) const {
-        return length() ? gson::Entry(&ents, 0).checkCollisions(recursive) : false;
+        return length() ? Entry(&ents, 0).checkCollisions(recursive) : false;
     }
 
     // проверка были ли хешированы ключи
@@ -74,16 +74,16 @@ class Parser {
 
     // получить количество элементов в главном контейнере
     uint16_t rootLength() const {
-        return length() ? gson::Entry(&ents, 0).length() : 0;
+        return length() ? Entry(&ents, 0).length() : 0;
     }
 
     // ===================== BY KEY =====================
 
     // доступ по ключу (главный контейнер - Object)
-    gson::Entry get(const Text& key) const {
-        return length() ? gson::Entry(&ents, 0).get(key) : gson::Entry();
+    Entry get(const Text& key) const {
+        return length() ? Entry(&ents, 0).get(key) : Entry();
     }
-    gson::Entry operator[](const Text& key) const {
+    Entry operator[](const Text& key) const {
         return get(key);
     }
 
@@ -95,10 +95,10 @@ class Parser {
     // ===================== BY HASH =====================
 
     // доступ по хэшу ключа (главный контейнер - Object)
-    gson::Entry get(size_t hash) const {
-        return length() ? gson::Entry(&ents, 0).get(hash) : gson::Entry();
+    Entry get(size_t hash) const {
+        return length() ? Entry(&ents, 0).get(hash) : Entry();
     }
-    gson::Entry operator[](size_t hash) const {
+    Entry operator[](size_t hash) const {
         return get(hash);
     }
 
@@ -110,11 +110,16 @@ class Parser {
     // ===================== BY INDEX =====================
 
     // доступ по индексу в главный контейнер - Array или Object
-    gson::Entry get(int index) const {
-        return length() ? gson::Entry(&ents, 0).get(index) : gson::Entry();
+    Entry get(int index) const {
+        return length() ? Entry(&ents, 0).get(index) : Entry();
     }
-    gson::Entry operator[](int index) const {
+    Entry operator[](int index) const {
         return get(index);
+    }
+
+    // итерация по вложенным
+    void loopAll(void (*cb)(Entry e)) {
+        for (uint16_t i = 0; i < ents.length(); i++) cb(Entry(&ents, i));
     }
 
     // ===================== PARSE =====================
@@ -122,14 +127,17 @@ class Parser {
     // парсить в массив длины rootLength()
     template <typename T>
     bool parseTo(T& arr) const {
-        return rootLength() ? gson::Entry(&ents, 0).parseTo(arr) : 0;
+        return rootLength() ? Entry(&ents, 0).parseTo(arr) : 0;
     }
 
     // ===================== BY INDEX =====================
 
     // получить элемент по индексу в общем массиве парсера
-    gson::Entry getByIndex(parent_t index) const {
-        return (length() && index < length()) ? gson::Entry(&ents, index) : gson::Entry();
+    Entry getByIndex(parent_t index) const {
+        return index < length() ? Entry(&ents, index) : Entry();
+    }
+    Entry _getByIndex(parent_t index) const {
+        return Entry(&ents, index);
     }
 
     // ===================== MISC =====================
@@ -138,47 +146,42 @@ class Parser {
     Text key(int idx) const {
         return (length() && (uint16_t)idx < length()) ? ents.keyText(idx) : "";
     }
+    // без проверок
+    Text _key(int idx) const {
+        return ents.keyText(idx);
+    }
 
     // прочитать хэш ключа по индексу
     size_t keyHash(int idx) const {
         return (length() && (uint16_t)idx < length()) ? (ents.hashed() ? ents.hash[idx] : ents.keyText(idx).hash()) : 0;
+    }
+    // без проверок
+    size_t _keyHash(int idx) const {
+        return ents.hash[idx];
     }
 
     // прочитать значение по индексу
     Text value(int idx) const {
         return (length() && (uint16_t)idx < length()) ? ents.valueText(idx) : "";
     }
+    // без проверок
+    Text _value(int idx) const {
+        return ents.valueText(idx);
+    }
 
     // прочитать родителя по индексу
-    gson::parent_t parent(int idx) const {
+    parent_t parent(int idx) const {
         return ((uint16_t)idx < length()) ? ents[idx].parent : 0;
     }
 
     // получить тип по индексу
-    gson::Type type(int idx) const {
-        return ((uint16_t)idx < length()) ? ents[idx].type : gson::Type::None;
+    Type type(int idx) const {
+        return ((uint16_t)idx < length()) ? ents[idx].type : Type::None;
     }
 
     // прочитать тип по индексу
     const __FlashStringHelper* readType(int index) const {
-        switch (type(index)) {
-            case gson::Type::Object:
-                return F("Object");
-            case gson::Type::Array:
-                return F("Array");
-            case gson::Type::String:
-                return F("String");
-            case gson::Type::Int:
-                return F("Int");
-            case gson::Type::Float:
-                return F("Float");
-            case gson::Type::Bool:
-                return F("Bool");
-            case gson::Type::Null:
-                return F("Null");
-            default:
-                return F("None");
-        }
+        return gson::readType(type(index));
     }
 
     // ============ PARSE ============
@@ -195,17 +198,17 @@ class Parser {
 
     // вывести в Print с форматированием
     void stringify(Print& pr) const {
-        if (length()) gson::Entry(&ents, 0).stringify(pr);
+        if (length()) Entry(&ents, 0).stringify(pr);
     }
 
     // ============ ERROR ============
     // есть ошибка парсинга
     bool hasError() const {
-        return error != gson::Error::None;
+        return error != Error::None;
     }
 
     // получить ошибку
-    gson::Error getError() const {
+    Error getError() const {
         return error;
     }
 
@@ -216,35 +219,14 @@ class Parser {
 
     // прочитать ошибку
     const __FlashStringHelper* readError() const {
-        switch (error) {
-            case gson::Error::Alloc: return F("Alloc");
-            case gson::Error::TooDeep: return F("TooDeep");
-            case gson::Error::NoParent: return F("NoParent");
-            case gson::Error::NotContainer: return F("NotContainer");
-            case gson::Error::UnexComma: return F("UnexComma");
-            case gson::Error::UnexColon: return F("UnexColon");
-            case gson::Error::UnexToken: return F("UnexToken");
-            case gson::Error::UnexQuotes: return F("UnexQuotes");
-            case gson::Error::UnexOpen: return F("UnexOpen");
-            case gson::Error::UnexClose: return F("UnexClose");
-            case gson::Error::UnknownToken: return F("UnknownToken");
-            case gson::Error::BrokenToken: return F("BrokenToken");
-            case gson::Error::BrokenString: return F("BrokenString");
-            case gson::Error::BrokenContainer: return F("BrokenContainer");
-            case gson::Error::EmptyKey: return F("EmptyKey");
-            case gson::Error::IndexOverflow: return F("IndexOverflow");
-            case gson::Error::LongPacket: return F("LongPacket");
-            case gson::Error::LongKey: return F("LongKey");
-            case gson::Error::EmptyString: return F("EmptyString");
-            default: return F("None");
-        }
+        return gson::readError(error);
     }
 
     // ============ PRIVATE ============
    private:
     gsutil::EntryStack ents;
     char* strp = nullptr;
-    gson::Error error = gson::Error::None;
+    Error error = Error::None;
     State state = State::Idle;
     bool strF = 0;
     gsutil::Entry_t ebuf;
@@ -253,11 +235,11 @@ class Parser {
 
     bool _startParse(const char* json, size_t length) {
         if (!length) {
-            error = gson::Error::EmptyString;
+            error = Error::EmptyString;
             return 0;
         }
         if (length >= (uint32_t)GSON_MAX_LEN) {
-            error = gson::Error::LongPacket;
+            error = Error::LongPacket;
             return 0;
         }
 
@@ -274,12 +256,12 @@ class Parser {
             error = _parse(0);
             ents[0].parent = GSON_MAX_INDEX;
         } else {
-            error = gson::Error::NotContainer;
+            error = Error::NotContainer;
         }
         return !hasError();
     }
 
-    gson::Error _parse(gson::parent_t parent) {
+    Error _parse(parent_t parent) {
         while (strp && strp < endp && *strp) {
             switch (*strp) {
                 case ' ':
@@ -289,18 +271,18 @@ class Parser {
                     break;
 
                 case ',':
-                    if (state != State::Idle) return gson::Error::UnexComma;
+                    if (state != State::Idle) return Error::UnexComma;
                     state = (ents[parent].isArray()) ? State::WaitValue : State::WaitKey;
                     break;
 
                 case ':':
                     if (ents[parent].isObject() && state == State::WaitColon) state = State::WaitValue;
-                    else return gson::Error::UnexColon;
+                    else return Error::UnexColon;
                     break;
 
                 case '\"':
-                    switch ((gson::Type)ents[parent].type) {
-                        case gson::Type::Array:
+                    switch ((Type)ents[parent].type) {
+                        case Type::Array:
                             switch (state) {
                                 case State::Idle:
                                 case State::WaitValue:
@@ -308,23 +290,23 @@ class Parser {
                                     break;
 
                                 default:
-                                    return gson::Error::UnexQuotes;
+                                    return Error::UnexQuotes;
                             }
                             break;
 
-                        case gson::Type::Object:
+                        case Type::Object:
                             switch (state) {
                                 case State::WaitKey:
                                 case State::Idle:
-                                    strp++;
-                                    if (*strp == '\"' || strp >= endp) return gson::Error::EmptyKey;
+                                    ++strp;
+                                    if (*strp == '\"' || strp >= endp) return Error::EmptyKey;
                                     ebuf.key_offs = strp - ents.str;
                                     while (1) {
                                         strp = (char*)memchr((void*)(strp + 1), '\"', endp - strp - 1);
-                                        if (!strp) return gson::Error::BrokenString;
+                                        if (!strp) return Error::BrokenString;
                                         if (strp[-1] != '\\') break;
                                     }
-                                    if (strp - ebuf.key(ents.str) > GSON_MAX_KEY_LEN) return gson::Error::LongKey;
+                                    if (strp - ebuf.key(ents.str) > GSON_MAX_KEY_LEN) return Error::LongKey;
                                     ebuf.key_len = strp - ebuf.key(ents.str);
                                     state = State::WaitColon;
                                     break;
@@ -334,12 +316,12 @@ class Parser {
                                     break;
 
                                 default:
-                                    return gson::Error::UnexQuotes;
+                                    return Error::UnexQuotes;
                             }
                             break;
 
                         default:
-                            return gson::Error::UnexQuotes;
+                            return Error::UnexQuotes;
                     }
                     break;
 
@@ -348,62 +330,62 @@ class Parser {
                     if (strp != ents.str) {  // not first symb
                         if (!(ents[parent].isArray() && (state == State::Idle || state == State::WaitValue)) &&
                             !(ents[parent].isObject() && state == State::WaitValue)) {
-                            return gson::Error::UnexOpen;
+                            return Error::UnexOpen;
                         }
                     }
-                    if (length() == GSON_MAX_INDEX - 1) return gson::Error::IndexOverflow;
+                    if (length() == GSON_MAX_INDEX - 1) return Error::IndexOverflow;
 
-                    ebuf.type = (*strp == '{') ? gson::Type::Object : gson::Type::Array;
+                    ebuf.type = (*strp == '{') ? Type::Object : Type::Array;
                     ebuf.parent = parent;
-                    if (!ents.push(ebuf)) return gson::Error::Alloc;
+                    if (!ents.push(ebuf)) return Error::Alloc;
                     ebuf.reset();
                     state = State::Idle;
-                    strp++;
-                    if (strp >= endp) return gson::Error::BrokenContainer;
-                    if (depth - 1 == 0) return gson::Error::TooDeep;
+                    ++strp;
+                    if (strp >= endp) return Error::BrokenContainer;
+                    if (depth - 1 == 0) return Error::TooDeep;
 
-                    depth--;
+                    --depth;
                     error = _parse(length() - 1);  // RECURSIVE
-                    depth++;
+                    ++depth;
                     if (hasError()) return error;
                 } break;
 
                 case '}':
                 case ']': {
-                    if (state != State::Idle || ents[parent].type != ((*strp == '}') ? gson::Type::Object : gson::Type::Array)) {
-                        return gson::Error::UnexClose;
+                    if (state != State::Idle || ents[parent].type != ((*strp == '}') ? Type::Object : Type::Array)) {
+                        return Error::UnexClose;
                     }
-                    return gson::Error::None;
+                    return Error::None;
                 } break;
 
                 default: {
                     if (!(ents[parent].isObject() && state == State::WaitValue) &&
                         !(ents[parent].isArray() && (state == State::WaitValue || state == State::Idle))) {
-                        return gson::Error::UnexToken;
+                        return Error::UnexToken;
                     }
 
                     ebuf.val_offs = strp - ents.str;
                     switch (*strp) {
                         case 't':
                         case 'f':
-                            ebuf.type = gson::Type::Bool;
+                            ebuf.type = Type::Bool;
                             break;
                         case '-':
                         case '0' ... '9':
-                            ebuf.type = gson::Type::Int;
+                            ebuf.type = Type::Int;
                             break;
                         case 'n':
-                            ebuf.type = gson::Type::Null;
+                            ebuf.type = Type::Null;
                             break;
                         default:
-                            return gson::Error::UnknownToken;
+                            return Error::UnknownToken;
                     }
                     while (true) {
                         if (*strp == '.') {
-                            if (ebuf.is(gson::Type::Int)) ebuf.type = gson::Type::Float;
-                            else return gson::Error::UnknownToken;
+                            if (ebuf.is(Type::Int)) ebuf.type = Type::Float;
+                            else return Error::UnknownToken;
                         }
-                        if (strp + 1 >= endp || !strp[1]) return gson::Error::BrokenToken;
+                        if (strp + 1 >= endp || !strp[1]) return Error::BrokenToken;
 
                         bool endF = 0;
                         switch (strp[1]) {  // next sym
@@ -420,22 +402,22 @@ class Parser {
                             ebuf.val_len = strp + 1 - ebuf.value(ents.str);
                         }
                         if (endF) break;
-                        strp++;
+                        ++strp;
                     }
-                    if (ebuf.is(gson::Type::Bool)) {
+                    if (ebuf.is(Type::Bool)) {
                         if (!(ebuf.val_len == 4 && !strncmp_P(ebuf.value(ents.str), PSTR("true"), 4)) &&
                             !(ebuf.val_len == 5 && !strncmp_P(ebuf.value(ents.str), PSTR("false"), 5))) {
-                            return gson::Error::BrokenToken;
+                            return Error::BrokenToken;
                         }
                     }
-                    if (ebuf.is(gson::Type::Null)) {
+                    if (ebuf.is(Type::Null)) {
                         if (!(ebuf.val_len == 4 && !strncmp_P(ebuf.value(ents.str), PSTR("null"), 4))) {
-                            return gson::Error::BrokenToken;
+                            return Error::BrokenToken;
                         }
                     }
-                    if (length() == GSON_MAX_INDEX - 1) return gson::Error::IndexOverflow;
+                    if (length() == GSON_MAX_INDEX - 1) return Error::IndexOverflow;
                     ebuf.parent = parent;
-                    if (!ents.push(ebuf)) return gson::Error::Alloc;
+                    if (!ents.push(ebuf)) return Error::Alloc;
                     ebuf.reset();
                     state = State::Idle;
                 } break;
@@ -444,29 +426,29 @@ class Parser {
 
             if (strF) {
                 strF = 0;
-                strp++;
-                if (strp >= endp) return gson::Error::BrokenString;
+                ++strp;
+                if (strp >= endp) return Error::BrokenString;
                 ebuf.val_offs = strp - ents.str;
                 if (*strp != '\"') {
                     while (1) {
                         strp = (char*)memchr((void*)(strp + 1), '\"', endp - strp - 1);
-                        if (!strp) return gson::Error::BrokenString;
+                        if (!strp) return Error::BrokenString;
                         if (strp[-1] != '\\') break;
                     }
                 }
-                if (length() == GSON_MAX_INDEX - 1) return gson::Error::IndexOverflow;
+                if (length() == GSON_MAX_INDEX - 1) return Error::IndexOverflow;
                 ebuf.val_len = strp - ebuf.value(ents.str);
                 ebuf.parent = parent;
-                ebuf.type = gson::Type::String;
-                if (!ents.push(ebuf)) return gson::Error::Alloc;
+                ebuf.type = Type::String;
+                if (!ents.push(ebuf)) return Error::Alloc;
                 ebuf.reset();
                 state = State::Idle;
             }
 
-            if (strp) strp++;
+            if (strp) ++strp;
         }  // while
 
-        return (parent == 0) ? gson::Error::None : gson::Error::BrokenContainer;
+        return (parent == 0) ? Error::None : Error::BrokenContainer;
     }
 
     // посчитать приблизительное количество элементов
@@ -486,7 +468,7 @@ class Parser {
                     break;
 
                 case ',':
-                    if (!inStr) count++;
+                    if (!inStr) ++count;
                     break;
             }
         }

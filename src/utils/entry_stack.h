@@ -34,12 +34,20 @@ class EntryStack : public gtl::stack<Entry_t> {
         ST::clear();
     }
 
+    inline const char* key(int idx) const {
+        return _get(idx).key(str);
+    }
+    inline const char* value(int idx) const {
+        return _get(idx).value(str);
+    }
+
     inline Text keyText(int idx) const {
-        return get(idx).keyText(str);
+        return _get(idx).keyText(str);
     }
     inline Text valueText(int idx) const {
-        return get(idx).valueText(str);
+        return _get(idx).valueText(str);
     }
+
     size_t getHash(int idx) {
         return hash ? hash[idx] : 0;
     }
