@@ -4,8 +4,9 @@
 #include <Print.h>
 #include <StringUtils.h>
 
-namespace gtl {
-class string : protected gtl::stack<char> {
+namespace gson {
+
+class rawstring : protected gtl::stack<char> {
     typedef gtl::stack<char> ST;
 
    public:
@@ -102,11 +103,8 @@ class string : protected gtl::stack<char> {
     using ST::length;
     using ST::reserve;
 };
-}  // namespace gtl
 
-namespace gson {
-
-class Str : public Printable, public gtl::string {
+class Str : public Printable, public rawstring {
    public:
     Str() {}
     Str(uint16_t res) {
@@ -240,7 +238,7 @@ class Str : public Printable, public gtl::string {
         return *this;
     }
 
-    using gtl::string::concat;
+    using rawstring::concat;
 
    private:
     bool _nc = false;
