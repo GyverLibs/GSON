@@ -88,7 +88,7 @@ class rawstring : protected gtl::stack<char> {
             return;
         }
         uint8_t len = su::floatLen(val, dec);
-        if (addCapacity(len)) {
+        if (addCapacity(len + 1)) {
             dtostrf(val, dec ? dec + 2 : 1, dec, buf() + _len);
             _len += len;
         }
