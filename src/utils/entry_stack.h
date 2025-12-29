@@ -35,17 +35,17 @@ class EntryStack : public gtl::stack<Entry_t> {
     }
 
     inline const char* key(int idx) const {
-        return _get(idx).key(str);
+        return (*this)[idx].key(str);
     }
     inline const char* value(int idx) const {
-        return _get(idx).value(str);
+        return (*this)[idx].value(str);
     }
 
     inline Text keyText(int idx) const {
-        return _get(idx).keyText(str);
+        return (*this)[idx].keyText(str);
     }
     inline Text valueText(int idx) const {
-        return _get(idx).valueText(str);
+        return (*this)[idx].valueText(str);
     }
 
     size_t getHash(int idx) {
