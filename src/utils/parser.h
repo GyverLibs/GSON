@@ -306,8 +306,8 @@ class Parser {
                                         if (!strp) return Error::BrokenString;
                                         if (strp[-1] != '\\') break;
                                     }
-                                    if (strp - ebuf.key(ents.str) > GSON_MAX_KEY_LEN) return Error::LongKey;
-                                    ebuf.key_len = strp - ebuf.key(ents.str);
+                                    if (strp - ebuf.key(ents.str) > GSON_MAX_KEY_LEN) ebuf.key_len = GSON_MAX_KEY_LEN;
+                                    else ebuf.key_len = strp - ebuf.key(ents.str);
                                     state = State::WaitColon;
                                     break;
 

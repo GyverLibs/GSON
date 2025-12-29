@@ -7,7 +7,7 @@
 
 namespace gson {
 #ifdef GSON_NO_LIMITS
-#define GSON_MAX_KEY_LEN 256
+#define GSON_MAX_KEY_LEN 255
 #if (UINT_MAX == UINT32_MAX)
 #define GSON_PARENT_BIT 16
 typedef uint16_t parent_t;
@@ -17,7 +17,7 @@ typedef uint8_t parent_t;
 #endif
 
 #else  // GSON_NO_LIMITS
-#define GSON_MAX_KEY_LEN 32
+#define GSON_MAX_KEY_LEN 31
 #if (UINT_MAX == UINT32_MAX)
 #define GSON_PARENT_BIT 9
 typedef uint16_t parent_t;
@@ -43,8 +43,8 @@ struct Entry_t {
 #else                       // GSON_NO_LIMITS
     gson::parent_t parent : GSON_PARENT_BIT;  // 512/256
     gson::Type type : 3;                      // 8
-    uint8_t key_len : 5;                      // 32
-    uint16_t val_len : 15;                    // 32 768
+    uint8_t key_len : 5;                      // 31
+    uint16_t val_len : 15;                    // 32 767
 #endif                      // GSON_NO_LIMITS
 
     uint16_t key_offs;
