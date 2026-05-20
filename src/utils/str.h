@@ -60,10 +60,14 @@ class rawstring : protected gtl::stack<char> {
         concat((long)val);
     }
     void concat(long val) {
-        if (addCapacity(12)) addLength(su::intToStr(val, end()));
+        char buf[12];
+        size_t len = su::intToStr(val, buf);
+        ST::concat(buf, len);
     }
     void concat(long long val) {
-        if (addCapacity(21)) addLength(su::int64ToStr(val, end()));
+        char buf[21];
+        size_t len = su::int64ToStr(val, buf);
+        ST::concat(buf, len);
     }
 
     void concat(unsigned char val) {
@@ -76,10 +80,14 @@ class rawstring : protected gtl::stack<char> {
         concat((unsigned long)val);
     }
     void concat(unsigned long val) {
-        if (addCapacity(12)) addLength(su::uintToStr(val, end()));
+        char buf[12];
+        size_t len = su::uintToStr(val, buf);
+        ST::concat(buf, len);
     }
     void concat(unsigned long long val) {
-        if (addCapacity(21)) addLength(su::uint64ToStr(val, end()));
+        char buf[21];
+        size_t len = su::uint64ToStr(val, buf);
+        ST::concat(buf, len);
     }
 
     void concat(float val, uint8_t dec = 2) {
@@ -88,10 +96,9 @@ class rawstring : protected gtl::stack<char> {
             return;
         }
         uint8_t len = su::floatLen(val, dec);
-        if (addCapacity(len + 1)) {
-            dtostrf(val, 0, dec, end());
-            addLength(len);
-        }
+        char buf[16];
+        dtostrf(val, 0, dec, buf);
+        ST::concat(buf, len);
     }
     void concat(double val, uint8_t dec = 2) {
         concat(float(val), dec);
@@ -121,6 +128,14 @@ class Str : public Printable, public rawstring {
 
     size_t printTo(Print& p) const {
         return p.write(buf(), length());
+    }
+
+    // Очищает буфер и сбрасывает флаг _nc (next-comma).
+    // Без сброса _nc после clear() следующий operator[] может
+    // вставить запятую, что приведёт к невалидному JSON.
+    void clear() {
+        rawstring::clear();
+        _nc = false;
     }
 
     void operator=(const Str& str) {
