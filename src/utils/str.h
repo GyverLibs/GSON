@@ -245,6 +245,11 @@ class Str : public Printable, public rawstring {
         return *this;
     }
 
+    void clear() {
+        rawstring::clear();
+        _nc = false;
+    }
+
     using rawstring::concat;
 
    private:
