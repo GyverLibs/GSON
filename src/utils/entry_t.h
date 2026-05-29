@@ -37,7 +37,7 @@ namespace gsutil {
 struct Entry_t {
 #ifdef GSON_NO_LIMITS
     gson::parent_t parent;  // 16/8 bit
-    gson::Type type;        // 8 bit
+    uint8_t type;           // 8 bit
     uint8_t key_len;        // 8 bit
     uint16_t val_len;       // 16 bit
 #else                       // GSON_NO_LIMITS
