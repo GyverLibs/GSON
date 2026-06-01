@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <GTL.h>
-#include <StringUtils.h>
+#include <StringUtilsGyver.h>
 #include <limits.h>
 
 // библиотека устарела и переехала в отдельный репозиторий https://github.com/GyverLibs/BSON

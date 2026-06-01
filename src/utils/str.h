@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <GTL.h>
 #include <Print.h>
-#include <StringUtils.h>
+#include <StringUtilsGyver.h>
 
 namespace gson {
 

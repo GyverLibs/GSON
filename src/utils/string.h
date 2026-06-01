@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <Print.h>
-#include <StringUtils.h>
+#include <StringUtilsGyver.h>
 
 namespace gson {
 

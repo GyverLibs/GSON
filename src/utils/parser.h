@@ -1,6 +1,6 @@
 #pragma once
 #include <Arduino.h>
-#include <StringUtils.h>
+#include <StringUtilsGyver.h>
 
 #include "entry.h"
 #include "entry_stack.h"
