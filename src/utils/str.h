@@ -191,35 +191,7 @@ class Str : public Printable, public rawstring {
     void escape(const Text& txt) {
         _checkNc();
         push('\"');
-        uint16_t len = txt.length();
-        reserve(len);
-        char p = 0;
-        for (uint16_t i = 0; i < len; i++) {
-            char c = txt._charAt(i);
-            switch (c) {
-                case '\"':
-                case '\\':
-                    if (p != '\\') push('\\');
-                    push(c);
-                    break;
-                case '\n':
-                    push('\\');
-                    push('n');
-                    break;
-                case '\r':
-                    push('\\');
-                    push('r');
-                    break;
-                case '\t':
-                    push('\\');
-                    push('t');
-                    break;
-                default:
-                    push(c);
-                    break;
-            }
-            p = c;
-        }
+        _concatEscaped(txt);
         push('\"');
         _resetNc();
     }
@@ -258,7 +230,7 @@ class Str : public Printable, public rawstring {
     Str& _key(const Text& t) {
         _checkNc();
         push('\"');
-        concat(t);
+        _concatEscaped(t);
         push('\"');
         push(':');
         return *this;
@@ -288,6 +260,35 @@ class Str : public Printable, public rawstring {
     }
     inline void _resetNc() {
         _nc = true;
+    }
+    void _concatEscaped(const Text& txt) {
+        uint16_t len = txt.length();
+        reserve(len);
+        for (uint16_t i = 0; i < len; i++) {
+            char c = txt._charAt(i);
+            switch (c) {
+                case '\"':
+                case '\\':
+                    push('\\');
+                    push(c);
+                    break;
+                case '\n':
+                    push('\\');
+                    push('n');
+                    break;
+                case '\r':
+                    push('\\');
+                    push('r');
+                    break;
+                case '\t':
+                    push('\\');
+                    push('t');
+                    break;
+                default:
+                    push(c);
+                    break;
+            }
+        }
     }
 };
 

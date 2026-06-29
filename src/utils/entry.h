@@ -171,7 +171,7 @@ class Entry : public Text {
             uint8_t depth = 1;
             parent_t index = idx + 1;
             pr.println((*ens)[idx].isObject() ? '{' : '[');
-            _stringify(pr, index, (*ens)[index].parent, depth);
+            _stringify(pr, index, idx, depth);
             pr.println();
             pr.print((*ens)[idx].isObject() ? '}' : ']');
         } else {
@@ -184,10 +184,12 @@ class Entry : public Text {
     template <typename T>
     bool parseTo(T& arr) const {
         if (!isArray()) return false;
-        for (size_t i = 0; i < length(); i++) {
-            arr[i] = ens->valueText(idx + 1 + i);
+        size_t out = 0;
+        size_t len = length();
+        for (size_t i = idx + 1; i < ens->length() && out < len; i++) {
+            if ((*ens)[i].parent == idx) arr[out++] = ens->valueText(i);
         }
-        return true;
+        return out == len;
     }
 
     // индекс элемента в общем массиве парсера

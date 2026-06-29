@@ -69,7 +69,7 @@ class string : public Printable {
     // добавить ключ (строка любого типа)
     string& addKey(const Text& key) {
         if (key.valid()) {
-            _addRaw(key, true, false);
+            _addRaw(key, true, true);
             colon();
         }
         return *this;
@@ -410,13 +410,12 @@ class string : public Printable {
     // escape символов
     virtual void escape(const Text& text) {
         uint16_t len = text.length();
-        char p = 0;
         for (uint16_t i = 0; i < len; i++) {
             char c = text.charAt(i);
             switch (c) {
                 case '\"':
                 case '\\':
-                    if (p != '\\') s += '\\';
+                    s += '\\';
                     s += c;
                     break;
                 case '\n':
@@ -435,7 +434,6 @@ class string : public Printable {
                     s += c;
                     break;
             }
-            p = c;
         }
     }
 

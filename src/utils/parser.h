@@ -234,7 +234,16 @@ class Parser {
     const char* endp = 0;
 
     bool _startParse(const char* json, size_t length) {
-        if (!length) {
+        ents.clear();
+        ents.str = nullptr;
+        endp = nullptr;
+        strp = nullptr;
+        error = Error::None;
+        state = State::Idle;
+        strF = 0;
+        ebuf = gsutil::Entry_t();
+
+        if (!json || !length) {
             error = Error::EmptyString;
             return 0;
         }
@@ -246,15 +255,11 @@ class Parser {
         ents.str = json;
         endp = ents.str + length;
         strp = (char*)ents.str;
-        state = State::Idle;
-        strF = 0;
-        ebuf = gsutil::Entry_t();
-        ents.clear();
 
         if ((strp[0] == '{' && strp[length - 1] == '}') || (strp[0] == '[' && strp[length - 1] == ']')) {
             ents.reserve(_count(json, length));
             error = _parse(0);
-            ents[0].parent = GSON_MAX_INDEX;
+            if (!hasError() && ents.length()) ents[0].parent = GSON_MAX_INDEX;
         } else {
             error = Error::NotContainer;
         }
@@ -304,7 +309,7 @@ class Parser {
                                     while (1) {
                                         strp = (char*)memchr((void*)(strp + 1), '\"', endp - strp - 1);
                                         if (!strp) return Error::BrokenString;
-                                        if (strp[-1] != '\\') break;
+                                        if (!_isEscapedQuote(strp, ents.str)) break;
                                     }
                                     if (strp - ebuf.key(ents.str) > GSON_MAX_KEY_LEN) ebuf.key_len = GSON_MAX_KEY_LEN;
                                     else ebuf.key_len = strp - ebuf.key(ents.str);
@@ -433,7 +438,7 @@ class Parser {
                     while (1) {
                         strp = (char*)memchr((void*)(strp + 1), '\"', endp - strp - 1);
                         if (!strp) return Error::BrokenString;
-                        if (strp[-1] != '\\') break;
+                        if (!_isEscapedQuote(strp, ents.str)) break;
                     }
                 }
                 if (length() == GSON_MAX_INDEX - 1) return Error::IndexOverflow;
@@ -459,7 +464,7 @@ class Parser {
         while (--len) {  // len-1.. 1
             switch (str[len]) {
                 case '\"':
-                    if (str[len - 1] != '\\') inStr = !inStr;
+                    if (!_isEscapedQuote(str + len, str)) inStr = !inStr;
                     break;
 
                 case '{':
@@ -473,6 +478,13 @@ class Parser {
             }
         }
         return count;
+    }
+
+    static bool _isEscapedQuote(const char* quote, const char* begin) {
+        uint16_t slashes = 0;
+        const char* p = quote;
+        while (p > begin && *--p == '\\') slashes++;
+        return slashes & 1;
     }
 };
 

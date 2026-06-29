@@ -81,7 +81,7 @@ class BSON : private gtl::stack_uniq<uint8_t> {
 
     // key
     void addKey(uint16_t key) {
-        push(BS_KEY_CODE | (key & 0b000));
+        push(BS_KEY_CODE | BS_MSB5(key));
         push(BS_LSB(key));
     }
     void addKey(const Text& key) {
